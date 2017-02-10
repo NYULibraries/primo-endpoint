@@ -13,6 +13,10 @@ extra-source-files:  README.md
 tested-with:         GHC == 7.10.3
 cabal-version:       >=1.10
 
+source-repository head
+  type: git
+  location: https://github.com/NYULibraries/primo_endpoint
+
 executable primo-import
   main-is:             Main.hs
   hs-source-dirs:      .
