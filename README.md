@@ -21,8 +21,7 @@ Reference data:
 
 ## Required fields for primo
 
-* "id"
-* "is_part_of_ssim"
+* "id": for FDA, "fda:hdl-handle-net-2451-XXXX"
 * "desc_metadata__addinfolink_tesim"
 * "desc_metadata__addinfotext_tesim"
 * "desc_metadata__available_tesim"
