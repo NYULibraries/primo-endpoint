@@ -1,0 +1,27 @@
+name:                primo-endpoint
+version:             0
+synopsis:            Convert metadata to Fedora-like Solr documents for primo
+-- description:         
+-- license:             
+-- license-file:        LICENSE
+author:              Dylan Simon
+maintainer:          dylan@dylex.net
+copyright:           2017 NYU
+-- category:            
+build-type:          Simple
+extra-source-files:  README.md
+tested-with:         GHC == 7.10.3
+cabal-version:       >=1.10
+
+executable primo-import
+  main-is:             Main.hs
+  hs-source-dirs:      .
+  default-language:    Haskell2010
+  ghc-options: -Wall
+  build-depends:       
+    base >=4.8 && <5,
+    bytestring,
+    aeson,
+    network-uri,
+    http-client >= 0.5,
+    http-conduit >= 2.2
