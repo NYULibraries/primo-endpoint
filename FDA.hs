@@ -2,6 +2,7 @@
 {-# LANGUAGE ViewPatterns #-}
 module FDA
   ( readFDA
+  , sourceFDA
   ) where
 
 import qualified Data.Aeson as JSON
@@ -64,3 +65,7 @@ readFDA = oneOrMany $ JSON.withObject "FDA" $ \obj -> do
     mapM (\f -> (,) f <$> o JSON..: "value") $ fieldMap key
   readMetadata = JSON.withArray "FDA.metadata" $
     V.foldM (\m f -> maybe m (uncurry $ addMetadata m) <$> readField f) mempty
+
+sourceFDA :: String -> String
+sourceFDA i@(all isDigit -> True) = "https://archive.nyu.edu/rest/collections/" ++ i ++ "/items?expand=metadata"
+sourceFDA s = s
