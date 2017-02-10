@@ -21,6 +21,9 @@ executable primo-import
   build-depends:       
     base >=4.8 && <5,
     bytestring,
+    text,
+    unordered-containers,
+    vector,
     aeson,
     network-uri,
     http-client >= 0.5,
