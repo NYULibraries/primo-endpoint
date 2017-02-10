@@ -6,7 +6,9 @@ import qualified Data.Aeson as JSON
 import qualified Data.Aeson.Types as JSON
 import qualified Data.ByteString.Lazy.Char8 as BSLC
 import           Data.Char (isDigit)
+import           Network.Connection (TLSSettings(..))
 import qualified Network.HTTP.Client as HTTP
+import qualified Network.HTTP.Client.TLS as HTTPS
 import qualified Network.HTTP.Simple as HTTP
 import qualified System.Console.GetOpt as Opt
 import           System.Environment (getProgName, getArgs)
@@ -73,6 +75,7 @@ main = do
       mapM_ (hPutStrLn stderr) err
       hPutStrLn stderr $ Opt.usageInfo ("Usage: " ++ prog ++ " [OPTION...]") opts
       exitFailure
+  HTTPS.setGlobalManager =<< HTTP.newManager (HTTPS.mkManagerSettings (TLSSettingsSimple True False False) Nothing)
   writeOutput optOutput . concat
     =<< mapM (\s -> handle (\e -> [] <$ hPutStrLn stderr (show s ++ ": " ++ show (e :: IOException)))
       $ loadSource s) optSources 

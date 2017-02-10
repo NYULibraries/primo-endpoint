@@ -26,5 +26,7 @@ executable primo-import
     vector,
     aeson,
     network-uri,
+    connection,
     http-client >= 0.5,
+    http-client-tls,
     http-conduit >= 2.2
