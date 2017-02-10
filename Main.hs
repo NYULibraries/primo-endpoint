@@ -42,7 +42,7 @@ defOpts = Opts
 opts :: [Opt.OptDescr (Opts -> Opts)]
 opts =
   [ Opt.Option "o" ["output"] (Opt.ReqArg (\f o -> o{ optOutput = f }) "DEST")
-    "Write MODS output to file, substituting \"$vars\" [-]"
+    "Write JSON output to file [-]"
   ] ++ map (fmap (\s o -> o{ optSources = s : optSources o })) sourceOpts
 
 loadFile :: String -> IO BSLC.ByteString
