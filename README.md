@@ -3,7 +3,7 @@ Reference data:
 
 * [Endpoint Primo now uses to collect metadata](https://ichabod.library.nyu.edu/catalog.json?page=2)
 * [ Sample collection in FDA from which to collect metadata. In that case metadata in XML ](https://archive.nyu.edu/request?verb=ListRecords&metadataPrefix=oai_dc&set=hdl_2451_33605)
-* [REST endpoint for FDA collection](https://archive.nyu.edu/rest/collections/631/items?expand=metadata)
+* [REST endpoint for FDA collection](https://archive.nyu.edu/rest/collections/631/items?expand=metadata,parentCollection)
 * [Ichabod FDA source reader](https://github.com/NYULibraries/ichabod/blob/development/lib/ichabod/resource_set/source_readers/fda_collection_rest_reader.rb)
   
   Mapping to NYUCore for that collection:
