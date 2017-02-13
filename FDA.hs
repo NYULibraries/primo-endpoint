@@ -51,7 +51,7 @@ readFDA = oneOrMany $ JSON.withObject "FDA" $ \obj -> do
   (handle0, handle1) <- readHandle =<< obj JSON..: "handle"
   metadata <- readMetadata =<< obj JSON..: "metadata"
   name <- readCollectionName =<< obj JSON..: "parentCollection"
-  return $ Document
+  return Document
     { documentID = "fda:hdl-handle-net-" <> handle0 <> "-" <> handle1
     , documentCollection = name
     , documentMetadata = processMetadata metadata
@@ -65,9 +65,8 @@ readFDA = oneOrMany $ JSON.withObject "FDA" $ \obj -> do
     mapM (\f -> (,) f <$> o JSON..: "value") $ fieldMap key
   readMetadata = JSON.withArray "FDA.metadata" $
     V.foldM (\m f -> maybe m (uncurry $ addMetadata m) <$> readField f) mempty
-  readCollectionName = JSON.withObject "FDA.parentCollection.name" $ \o -> do
-    n <- o JSON..: "name"    
-    return ( n )
+  readCollectionName = JSON.withObject "FDA.parentCollection.name"
+    $ (JSON..: "name")
 
 sourceFDA :: String -> String
 sourceFDA i@(all isDigit -> True) = "https://archive.nyu.edu/rest/collections/" ++ i ++ "/items?expand=metadata,parentCollection"
