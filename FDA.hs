@@ -30,8 +30,7 @@ fieldMap k = HM.lookup k $ HM.fromList
   , ("description",         "description")
   , ("format",              "format")
   , ("identifier.citation", "relation") -- also "identifier"
-  , ("identifier.uri",      "identifier")
-  , ("identifier.uri",      "available")
+  , ("identifier.uri",      "identifier") -- also "available"
   , ("publisher",           "publisher")
   , ("publisher.place",     publisherPlace) -- merged into "publisher"
   , ("rights",              "rights")
@@ -41,11 +40,14 @@ fieldMap k = HM.lookup k $ HM.fromList
 
 processMetadata :: Metadata -> Metadata
 processMetadata = processPublisher . processIdentifier where
-  processIdentifier m = maybe m (\i -> HM.insertWith (flip mappend) "identifier" i m) $ HM.lookup "relation" m
+  processIdentifier =
+    dup "identifier" "relation"
+    . dup "available" "identifier"
   processPublisher m = HM.adjust (\(Value pl) -> Value
     [ w <> ":" <> p <> "," <> d | p <- pl, w <- get m publisherPlace, d <- get m "date" ]) "publisher"
     $ HM.delete publisherPlace m
   get m k = values $ HM.lookupDefault (Value [T.empty]) k m
+  dup d s m = maybe m (\i -> HM.insertWith (flip mappend) d i m) $ HM.lookup s m
 
 readFDA :: JSON.Value -> JSON.Parser [Document]
 readFDA = oneOrMany $ JSON.withObject "FDA" $ \obj -> do
