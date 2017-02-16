@@ -31,6 +31,7 @@ fieldMap k = HM.lookup k $ HM.fromList
   , ("format",              "format")
   , ("identifier.citation", "relation") -- also "identifier"
   , ("identifier.uri",      "identifier")
+  , ("identifier.uri",      "available")
   , ("publisher",           "publisher")
   , ("publisher.place",     publisherPlace) -- merged into "publisher"
   , ("rights",              "rights")
