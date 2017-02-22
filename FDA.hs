@@ -29,7 +29,7 @@ fieldMap k = HM.lookup k $ HM.fromList
   , ("date.issued",         "date") -- also merged into "publisher"
   , ("description",         "description")
   , ("format",              "format")
-  , ("identifier.citation", "relation") -- also "identifier"
+  , ("identifier.citation", "citation") -- also "relation", "identifier"
   , ("identifier.uri",      "identifier") -- also "available"
   , ("publisher",           "publisher")
   , ("publisher.place",     publisherPlace) -- merged into "publisher"
@@ -41,7 +41,8 @@ fieldMap k = HM.lookup k $ HM.fromList
 processMetadata :: Metadata -> Metadata
 processMetadata = processPublisher . processIdentifier where
   processIdentifier =
-    dup "identifier" "relation"
+    dup "identifier" "citation"
+    . dup "relation" "citation"
     . dup "available" "identifier"
   processPublisher m = HM.adjust (\(Value pl) -> Value
     [ w <> ":" <> p <> "," <> d | p <- pl, w <- get m publisherPlace, d <- get m "date" ]) "publisher"
