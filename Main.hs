@@ -2,6 +2,7 @@
 {-# LANGUAGE ViewPatterns #-}
 
 import           Control.Exception (handle, IOException)
+import           Control.Monad (forM_, when)
 import qualified Data.Aeson as JSON
 import qualified Data.Aeson.Types as JSON
 import qualified Data.ByteString.Lazy.Char8 as BSLC
@@ -16,6 +17,7 @@ import           System.IO (hPutStrLn, stderr)
 
 import           Document
 import           FDA
+import           Server
 
 data Source
   = SourceFDA String
@@ -30,18 +32,22 @@ sourceOpts =
 data Opts = Opts
   { optSources :: [Source]
   , optOutput :: String
+  , optServer :: Maybe Int
   }
 
 defOpts :: Opts
 defOpts = Opts
   { optSources = []
   , optOutput = "-"
+  , optServer = Nothing
   }
 
 opts :: [Opt.OptDescr (Opts -> Opts)]
 opts =
   [ Opt.Option "o" ["output"] (Opt.ReqArg (\f o -> o{ optOutput = f }) "DEST")
     "Write JSON output to file [-]"
+  , Opt.Option "w" ["web-server"] (Opt.OptArg (\f o -> o{ optServer = Just (maybe 80 read f) }) "PORT")
+    "Run a web server on PORT [80] to serve the result"
   ] ++ map (fmap (\s o -> o{ optSources = s : optSources o })) sourceOpts
 
 loadFile :: String -> IO BSLC.ByteString
@@ -76,3 +82,7 @@ main = do
   writeOutput optOutput . concat
     =<< mapM (\s -> handle (\e -> [] <$ hPutStrLn stderr (show s ++ ": " ++ show (e :: IOException)))
       $ loadSource s) optSources 
+
+  forM_ optServer $ \port -> do
+    when (optOutput == "-") $ fail "Web server requires output file path."
+    server port optOutput

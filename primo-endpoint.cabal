@@ -33,4 +33,7 @@ executable primo-import
     connection,
     http-client >= 0.5,
     http-client-tls,
-    http-conduit >= 2.2
+    http-conduit >= 2.2,
+    http-types,
+    wai,
+    warp
