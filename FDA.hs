@@ -57,6 +57,7 @@ readFDA = oneOrMany $ JSON.withObject "FDA" $ \obj -> do
   name <- readCollectionName =<< obj JSON..: "parentCollection"
   return Document
     { documentID = "fda:hdl-handle-net-" <> handle0 <> "-" <> handle1
+    , documentType = "Report"
     , documentCollection = name
     , documentMetadata = processMetadata metadata
     }
@@ -73,5 +74,5 @@ readFDA = oneOrMany $ JSON.withObject "FDA" $ \obj -> do
     $ (JSON..: "name")
 
 sourceFDA :: String -> String
-sourceFDA i@(all isDigit -> True) = "https://archive.nyu.edu/rest/collections/" ++ i ++ "/items?expand=metadata,parentCollection"
+sourceFDA i@(all isDigit -> True) = "https://archive.nyu.edu/rest/collections/" ++ i ++ "/items?expand=metadata,parentCollection&offset=100"
 sourceFDA s = s

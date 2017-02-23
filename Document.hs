@@ -33,11 +33,13 @@ addMetadata m k v = HM.insertWith (flip mappend) k (Value [v]) m
 data Document = Document
   { documentID :: T.Text
   , documentCollection :: T.Text
+  , documentType :: T.Text
   , documentMetadata :: Metadata
   }
 
 instance JSON.ToJSON Document where
-  toJSON (Document i c m) = JSON.Object
+  toJSON (Document i c t m) = JSON.Object
     $ HM.insert "id" (JSON.String i)
     $ HM.insert "collection_ssm" (JSON.String c)
+    $ HM.insert "desc_metadata__type_tesim" (JSON.String t)
     $ HM.fromList $ map (("desc_metadata__" <>) . (<> "_tesim") *** JSON.toJSON) $ HM.toList m
