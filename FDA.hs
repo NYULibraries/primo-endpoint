@@ -74,5 +74,5 @@ readFDA = oneOrMany $ JSON.withObject "FDA" $ \obj -> do
     $ (JSON..: "name")
 
 sourceFDA :: String -> String
-sourceFDA i@(all isDigit -> True) = "https://archive.nyu.edu/rest/collections/" ++ i ++ "/items?expand=metadata,parentCollection&offset=100"
+sourceFDA i@(all isDigit -> True) = "https://archive.nyu.edu/rest/collections/" ++ i ++ "/items?expand=metadata,parentCollection"
 sourceFDA s = s
