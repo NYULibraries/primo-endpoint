@@ -1,31 +1,46 @@
 # update interval
 interval: 86400
+generators:
+  # special generator for joining "date:publisher,place"
+  publisher:
+    paste:
+    - field: place
+      default: ""
+    - ":"
+    - name
+    - ","
+    - field: date
+      default: ""
+templates:
+  fda:
+    creator: contributor.author
+    date: date.issued
+    description: description
+    format: format
+    citation: identifier.citation
+    relation: identifier.citation
+    available: identifier.uri
+    identifier:
+      # concatenate all field value lists
+      - identifier.uri
+      - identifier.citation
+    publisher:
+      # use custom generator, defined above
+      publisher:
+        place: publisher.place
+        name: publisher
+        date: date.issued
+    rights: rights
+    subject: subject
+    title: title
+    type:
+      # fixed value
+      string: "Report"
 collections:
   # key is unique collection identifier
   ngo:
     source: FDA
     id: 631
+    template: fda
     fields:
-      creator: contributor.author
-      date: date.issued
-      description: description
-      format: format
-      citation: identifier.citation
-      relation: identifier.citation
-      available: identifier.uri
-      identifier:
-        # concatenate all field value lists
-        - identifier.uri
-        - identifier.citation
-      publisher:
-        # special "publisher" function for joining "date:publisher,place"
-        publisher:
-          place: "publisher.place"
-          name: "publisher"
-          date: "date.issued"
-      rights: rights
-      subject: subject
-      title: title
-      type:
-        # fixed value
-        string: "Report"
+      # other fields specific to this collection

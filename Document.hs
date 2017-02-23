@@ -2,6 +2,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Document
   ( Value(..)
+  , valueOr
   , Metadata
   , addMetadata
   , Document(..)
@@ -24,6 +25,10 @@ instance JSON.FromJSON Value where
 
 instance JSON.ToJSON Value where
   toJSON (Value l) = JSON.Array $ V.fromList $ map JSON.String l
+
+valueOr :: Value -> Value -> Value
+valueOr (Value []) v = v
+valueOr v _ = v
 
 type Metadata = HM.HashMap T.Text Value
 

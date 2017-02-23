@@ -17,6 +17,7 @@ import           System.IO (hPutStrLn, stderr)
 
 import           Document
 import           FDA
+import           Fields
 import           Server
 
 data Source
