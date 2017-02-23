@@ -1,4 +1,7 @@
+# update interval
+interval: 86400
 collections:
+  # key is unique collection identifier
   ngo:
     source: FDA
     id: 631
@@ -11,9 +14,11 @@ collections:
       relation: identifier.citation
       available: identifier.uri
       identifier:
+        # concatenate all field value lists
         - identifier.uri
         - identifier.citation
       publisher:
+        # special "publisher" function for joining "date:publisher,place"
         publisher:
           place: "publisher.place"
           name: "publisher"
@@ -21,3 +26,6 @@ collections:
       rights: rights
       subject: subject
       title: title
+      type:
+        # fixed value
+        string: "Report"
