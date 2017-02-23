@@ -40,4 +40,5 @@ instance JSON.ToJSON Document where
   toJSON (Document i c m) = JSON.Object
     $ HM.insert "id" (JSON.String i)
     $ HM.insert "collection_ssm" (JSON.String c)
+    $ HM.insert "desc_metadata__type_tesim" (JSON.String "Report")
     $ HM.fromList $ map (("desc_metadata__" <>) . (<> "_tesim") *** JSON.toJSON) $ HM.toList m
