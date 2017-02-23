@@ -1,0 +1,23 @@
+collections:
+  ngo:
+    source: FDA
+    id: 631
+    fields:
+      creator: contributor.author
+      date: date.issued
+      description: description
+      format: format
+      citation: identifier.citation
+      relation: identifier.citation
+      available: identifier.uri
+      identifier:
+        - identifier.uri
+        - identifier.citation
+      publisher:
+        publisher:
+          place: "publisher.place"
+          name: "publisher"
+          date: "date.issued"
+      rights: rights
+      subject: subject
+      title: title
