@@ -57,6 +57,7 @@ readFDA = oneOrMany $ JSON.withObject "FDA" $ \obj -> do
   name <- readCollectionName =<< obj JSON..: "parentCollection"
   return Document
     { documentID = "fda:hdl-handle-net-" <> handle0 <> "-" <> handle1
+    , documentType = "Report"
     , documentCollection = name
     , documentMetadata = processMetadata metadata
     }
