@@ -2,16 +2,19 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE TypeSynonymInstances #-}
 module Fields
-  ( generateFields
+  ( Generators
+  , generateFields
+  , parseGenerators
   ) where
 
 import qualified Data.Aeson.Types as JSON
 import           Data.Char (isAlpha)
-import qualified Data.HashMap.Lazy as HM
+import qualified Data.HashMap.Strict as HM
 import           Data.Monoid ((<>))
 import qualified Data.Text as T
 import qualified Data.Vector as V
 
+import           Util
 import           Document
 
 data Generator
@@ -74,9 +77,11 @@ parseGenerator _ JSON.Null = return $ mempty
 parseGenerator g (JSON.Array l) = GeneratorList <$> mapM (parseGenerator g) (V.toList l)
 parseGenerator g (JSON.Object o) = do
   maybe return (\d x -> GeneratorOr x <$> parseGenerator g d) (HM.lookup "default" o)
-    . mconcat =<< mapM (uncurry $ parseGeneratorKey g) (HM.toList $ HM.delete "default" o)
+    =<< foldMapM (uncurry $ parseGeneratorKey g) (HM.toList $ HM.delete "default" o)
 parseGenerator _ v = JSON.typeMismatch "field generator" v
 
-instance JSON.FromJSON Generators where
-  parseJSON JSON.Null = mempty
-  parseJSON v = JSON.withObject "generators" (mapM $ parseGenerator mempty) v
+instance JSON.FromJSON Generator where
+  parseJSON = parseGenerator mempty
+
+parseGenerators :: Generators -> JSON.Value -> JSON.Parser Generators
+parseGenerators g v = withObjectOrNull "field generators" (mapM $ parseGenerator g) v
