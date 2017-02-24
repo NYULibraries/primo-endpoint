@@ -1,6 +1,6 @@
 name:                primo-endpoint
 version:             0
-synopsis:            Convert metadata to Fedora-like Solr documents for primo
+synopsis:            Convert and serve metadata to Fedora-like Solr documents for primo
 -- description:         
 -- license:             
 -- license-file:        LICENSE

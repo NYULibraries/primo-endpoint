@@ -17,6 +17,7 @@ import           System.Exit (exitFailure)
 import           System.IO (hPutStrLn, stderr)
 import qualified Data.Vector as V
 
+import           Util
 import           Config
 import           Document
 import           Server
@@ -65,9 +66,10 @@ main = do
   config <- either throwIO return =<< YAML.decodeFileEither optConfig
 
   HTTPS.setGlobalManager =<< HTTP.newManager (HTTPS.mkManagerSettings (TLSSettingsSimple True False False) Nothing)
-  forM_ (configCollections config) $ \c -> handle
-    (\e -> hPutStrLn stderr (show (collectionSource c) ++ ": " ++ show (e :: SomeException)))
-    $ writeOutput optOutput =<< loadCollection c
+  writeOutput optOutput =<< foldMapM (\c -> handle
+      (\e -> mempty <$ hPutStrLn stderr (show (collectionSource c) ++ ": " ++ show (e :: SomeException)))
+      $ loadCollection c)
+    (configCollections config)
 
   forM_ optServer $ \port -> do
     when (optOutput == "-") $ fail "Web server requires output file path."
