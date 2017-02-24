@@ -10,7 +10,7 @@ module Document
 
 import           Control.Arrow ((***))
 import qualified Data.Aeson.Types as JSON
-import qualified Data.HashMap.Lazy as HM
+import qualified Data.HashMap.Strict as HM
 import           Data.Monoid ((<>))
 import qualified Data.Text as T
 import qualified Data.Vector as V
@@ -40,7 +40,7 @@ data Document = Document
   , documentCollection :: T.Text
   , documentType :: T.Text
   , documentMetadata :: Metadata
-  }
+  } deriving (Show)
 
 instance JSON.ToJSON Document where
   toJSON (Document i c t m) = JSON.Object

@@ -1,17 +1,20 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE ViewPatterns #-}
 module FDA
-  ( readFDA
-  , sourceFDA
+  ( loadFDA
   ) where
 
 import qualified Data.Aeson as JSON
 import qualified Data.Aeson.Types as JSON
+import qualified Data.ByteString.Char8 as BSC
 import           Data.Char (isDigit)
 import qualified Data.HashMap.Lazy as HM
 import           Data.Monoid ((<>))
 import qualified Data.Text as T
 import qualified Data.Vector as V
+import qualified Network.HTTP.Client as HTTP
+import qualified Network.HTTP.Simple as HTTP
+import qualified Network.HTTP.Types as HTTP
 
 import           Document
 
@@ -50,11 +53,24 @@ processMetadata = processPublisher . processIdentifier where
   get m k = values $ HM.lookupDefault (Value [T.empty]) k m
   dup d s m = maybe m (\i -> HM.insertWith (flip mappend) d i m) $ HM.lookup s m
 
-readFDA :: JSON.Value -> JSON.Parser [Document]
-readFDA = oneOrMany $ JSON.withObject "FDA" $ \obj -> do
+data FDACollection = FDACollection
+  { collectionName :: T.Text
+  , collectionSize :: Int
+  }
+
+instance JSON.FromJSON FDACollection where
+  parseJSON = JSON.withObject "FDA collection" $ \o -> do
+    n <- o JSON..: "name"
+    c <- o JSON..: "numberItems"
+    return FDACollection
+      { collectionName = n
+      , collectionSize = c
+      }
+
+parseFDA :: T.Text -> JSON.Value -> JSON.Parser [Document]
+parseFDA name = oneOrMany $ JSON.withObject "FDA" $ \obj -> do
   (handle0, handle1) <- readHandle =<< obj JSON..: "handle"
   metadata <- readMetadata =<< obj JSON..: "metadata"
-  name <- readCollectionName =<< obj JSON..: "parentCollection"
   return Document
     { documentID = "fda:hdl-handle-net-" <> handle0 <> "-" <> handle1
     , documentType = "Report"
@@ -70,9 +86,13 @@ readFDA = oneOrMany $ JSON.withObject "FDA" $ \obj -> do
     mapM (\f -> (,) f <$> o JSON..: "value") $ fieldMap key
   readMetadata = JSON.withArray "FDA.metadata" $
     V.foldM (\m f -> maybe m (uncurry $ addMetadata m) <$> readField f) mempty
-  readCollectionName = JSON.withObject "FDA.parentCollection.name"
-    $ (JSON..: "name")
 
-sourceFDA :: String -> String
-sourceFDA i@(all isDigit -> True) = "https://archive.nyu.edu/rest/collections/" ++ i ++ "/items?expand=metadata,parentCollection"
-sourceFDA s = s
+loadFDA :: Int -> IO [Document]
+loadFDA i = do
+  req <- HTTP.addRequestHeader HTTP.hAccept "application/json"
+    <$> HTTP.parseRequest ("https://archive.nyu.edu/rest/collections/" ++ show i)
+  FDACollection n z <- HTTP.getResponseBody <$> HTTP.httpJSON req
+  j <- HTTP.getResponseBody <$> HTTP.httpJSON (
+    HTTP.setQueryString [("expand",Just "metadata"),("limit",Just $ BSC.pack $ show z)]
+    req{ HTTP.path = HTTP.path req <> "/items" })
+  either fail return $ JSON.parseEither (parseFDA n) j

@@ -1,66 +1,47 @@
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE ViewPatterns #-}
 
-import           Control.Exception (handle, IOException)
+import           Control.Exception (throwIO, handle, SomeException)
 import           Control.Monad (forM_, when)
 import qualified Data.Aeson as JSON
-import qualified Data.Aeson.Types as JSON
 import qualified Data.ByteString.Lazy.Char8 as BSLC
+import           Data.List (foldl')
+import           Data.Maybe (fromMaybe)
+import qualified Data.Yaml as YAML
 import           Network.Connection (TLSSettings(..))
 import qualified Network.HTTP.Client as HTTP
 import qualified Network.HTTP.Client.TLS as HTTPS
-import qualified Network.HTTP.Simple as HTTP
 import qualified System.Console.GetOpt as Opt
 import           System.Environment (getProgName, getArgs)
 import           System.Exit (exitFailure)
 import           System.IO (hPutStrLn, stderr)
 
+import           Config
 import           Document
-import           FDA
-import           Fields
 import           Server
 
-data Source
-  = SourceFDA String
-  deriving (Eq, Show)
-
-sourceOpts :: [Opt.OptDescr Source]
-sourceOpts =
-  [ Opt.Option "f" ["fda"] (Opt.ReqArg SourceFDA "SRC")
-    "Load FDA collections from JSON file, URL, or ID"
-  ]
-
 data Opts = Opts
-  { optSources :: [Source]
+  { optConfig :: FilePath
   , optOutput :: String
   , optServer :: Maybe Int
   }
 
 defOpts :: Opts
 defOpts = Opts
-  { optSources = []
+  { optConfig = "config.yml"
   , optOutput = "-"
   , optServer = Nothing
   }
 
 opts :: [Opt.OptDescr (Opts -> Opts)]
 opts =
-  [ Opt.Option "o" ["output"] (Opt.ReqArg (\f o -> o{ optOutput = f }) "DEST")
+  [ Opt.Option "c" ["config"] (Opt.ReqArg (\f o -> o{ optConfig = f }) "FILE")
+    ("Load configuration from FILE [" ++ optConfig defOpts ++ "]")
+  , Opt.Option "o" ["output"] (Opt.OptArg (\f o -> o{ optOutput = (fromMaybe "-" f) }) "DEST")
     "Write JSON output to file [-]"
   , Opt.Option "w" ["web-server"] (Opt.OptArg (\f o -> o{ optServer = Just (maybe 80 read f) }) "PORT")
     "Run a web server on PORT [80] to serve the result"
-  ] ++ map (fmap (\s o -> o{ optSources = s : optSources o })) sourceOpts
-
-loadFile :: String -> IO BSLC.ByteString
-loadFile "-" = BSLC.getContents
-loadFile (HTTP.parseUrlThrow -> Just q) =
-  HTTP.responseBody <$> HTTP.httpLBS q
-loadFile f = BSLC.readFile f
-
-loadSource :: Source -> IO [Document]
-loadSource (SourceFDA f) = do
-  bs <- loadFile $ sourceFDA f
-  either fail return $ JSON.parseEither readFDA =<< JSON.eitherDecode bs
+  ]
 
 outputFile :: String -> BSLC.ByteString -> IO ()
 outputFile "-" = BSLC.putStr
@@ -74,15 +55,18 @@ main = do
   prog <- getProgName
   args <- getArgs
   Opts{..} <- case Opt.getOpt Opt.Permute opts args of
-    (ol, [], []) -> return $ foldr ($) defOpts ol
+    (ol, [], []) -> return $ foldl' (flip ($)) defOpts ol
     (_, _, err) -> do
       mapM_ (hPutStrLn stderr) err
       hPutStrLn stderr $ Opt.usageInfo ("Usage: " ++ prog ++ " [OPTION...]") opts
       exitFailure
+  
+  config <- either throwIO return =<< YAML.decodeFileEither optConfig
+
   HTTPS.setGlobalManager =<< HTTP.newManager (HTTPS.mkManagerSettings (TLSSettingsSimple True False False) Nothing)
-  writeOutput optOutput . concat
-    =<< mapM (\s -> handle (\e -> [] <$ hPutStrLn stderr (show s ++ ": " ++ show (e :: IOException)))
-      $ loadSource s) optSources 
+  forM_ (configCollections config) $ \c -> handle
+    (\e -> hPutStrLn stderr (show (collectionSource c) ++ ": " ++ show (e :: SomeException)))
+    $ writeOutput optOutput =<< loadSource (collectionSource c)
 
   forM_ optServer $ \port -> do
     when (optOutput == "-") $ fail "Web server requires output file path."

@@ -20,6 +20,7 @@ data Source
   = SourceFDA
     { fdaCollectionId :: Int
     }
+  deriving (Show)
 
 data Collection = Collection
   { collectionSource :: Source
