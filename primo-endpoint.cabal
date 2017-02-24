@@ -23,6 +23,7 @@ executable primo-import
   other-modules:
     Util
     Document
+    Config
     FDA
     Fields
     Server
@@ -42,4 +43,5 @@ executable primo-import
     http-conduit >= 2.2,
     http-types,
     wai,
-    warp
+    warp,
+    yaml
