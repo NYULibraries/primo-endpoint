@@ -15,6 +15,7 @@ import qualified System.Console.GetOpt as Opt
 import           System.Environment (getProgName, getArgs)
 import           System.Exit (exitFailure)
 import           System.IO (hPutStrLn, stderr)
+import qualified Data.Vector as V
 
 import           Config
 import           Document
@@ -47,7 +48,7 @@ outputFile :: String -> BSLC.ByteString -> IO ()
 outputFile "-" = BSLC.putStr
 outputFile f = BSLC.writeFile f
 
-writeOutput :: String -> [Document] -> IO ()
+writeOutput :: String -> (V.Vector Document) -> IO ()
 writeOutput f = outputFile f . JSON.encode
 
 main :: IO ()
@@ -66,7 +67,7 @@ main = do
   HTTPS.setGlobalManager =<< HTTP.newManager (HTTPS.mkManagerSettings (TLSSettingsSimple True False False) Nothing)
   forM_ (configCollections config) $ \c -> handle
     (\e -> hPutStrLn stderr (show (collectionSource c) ++ ": " ++ show (e :: SomeException)))
-    $ writeOutput optOutput =<< loadSource (collectionSource c)
+    $ writeOutput optOutput =<< loadCollection c
 
   forM_ optServer $ \port -> do
     when (optOutput == "-") $ fail "Web server requires output file path."

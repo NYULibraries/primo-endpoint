@@ -13,26 +13,26 @@ generators:
       default: ""
 templates:
   fda:
-    creator: contributor.author
-    date: date.issued
-    description: description
-    format: format
-    citation: identifier.citation
-    relation: identifier.citation
-    available: identifier.uri
+    creator: dc.contributor.author
+    date: dc.date.issued
+    description: dc.description
+    format: dc.format
+    citation: dc.identifier.citation
+    relation: dc.identifier.citation
+    available: dc.identifier.uri
     identifier:
       # concatenate all field value lists
-      - identifier.uri
-      - identifier.citation
+      - dc.identifier.uri
+      - dc.identifier.citation
     publisher:
       # use custom generator, defined above
       publisher:
-        place: publisher.place
-        name: publisher
-        date: date.issued
-    rights: rights
-    subject: subject
-    title: title
+        place: dc.publisher.place
+        name: dc.publisher
+        date: dc.date.issued
+    rights: dc.rights
+    subject: dc.subject
+    title: dc.title
     type:
       # fixed value
       string: "Report"

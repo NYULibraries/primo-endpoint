@@ -53,8 +53,8 @@ generate m (GeneratorWith gm g) = generate (HM.map (generate m) gm) g
 
 type Generators = HM.HashMap T.Text Generator
 
-generateFields :: Metadata -> Generators -> Metadata
-generateFields = HM.map . generate
+generateFields :: Generators -> Metadata -> Metadata
+generateFields g m = HM.map (generate m) g
 
 parseGeneratorKey :: Generators -> T.Text -> JSON.Value -> JSON.Parser Generator
 parseGeneratorKey _ "field" v =

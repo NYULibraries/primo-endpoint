@@ -1,15 +1,16 @@
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE RecordWildCards #-}
 module Config
-  ( Source(..)
-  , Collection(..)
+  ( Collection(..)
   , Config(..)
-  , loadSource
+  , loadCollection
   ) where
 
 import qualified Data.Aeson.Types as JSON
 import qualified Data.HashMap.Strict as HM
 import           Data.Monoid ((<>))
 import qualified Data.Text as T
+import qualified Data.Vector as V
 
 import           Util
 import           Document
@@ -18,7 +19,7 @@ import           FDA
 
 data Source
   = SourceFDA
-    { fdaCollectionId :: Int
+    { _fdaCollectionId :: Int
     }
   deriving (Show)
 
@@ -65,5 +66,9 @@ instance JSON.FromJSON Config where
       , configInterval = i
       }
 
-loadSource :: Source -> IO [Document]
+loadSource :: Source -> IO (V.Vector Document)
 loadSource (SourceFDA i) = loadFDA i
+
+loadCollection :: Collection -> IO (V.Vector Document)
+loadCollection Collection{..} =
+  V.map (mapMetadata $ generateFields collectionFields) <$> loadSource collectionSource
