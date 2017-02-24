@@ -12,7 +12,24 @@ generators:
     - field: date
       default: ""
 templates:
-  fda:
+  traditional:
+    creator: dc.contributor.author
+    title: dc.title
+    date: dc.date.issued
+    description: dc.description
+    format: dc.format
+    citation: dc.identifier.citation
+    relation: dc.identifier.citation
+    available: dc.identifier.uri
+    identifier:
+      # concatenate all field value lists
+      - dc.identifier.uri
+      - dc.identifier.citation
+    publisher: dc.publisher
+    rights: dc.rights
+    subject: dc.subject
+    type: dc.type
+  ngo:
     creator: dc.contributor.author
     date: dc.date.issued
     description: dc.description
@@ -38,9 +55,19 @@ templates:
       string: "Report"
 collections:
   # key is unique collection identifier
+  vinopal: 
+    source: FDA
+    id:  520  
+    template: traditional 
+  april: 
+    source: FDA
+    id:  683  
+    template: traditional 
+  kate: 
+    source: FDA
+    id:  677  
+    template: traditional 
   ngo:
     source: FDA
     id: 631
-    template: fda
-    fields:
-      # other fields specific to this collection
+    template: ngo 
