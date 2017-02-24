@@ -52,7 +52,7 @@ instance JSON.ToJSON Document where
   toJSON (Document i c m) = JSON.Object
     $ HM.insert "id" (JSON.String i)
     $ HM.insert "collection_ssm" (JSON.String c)
-    $ HM.fromList $ mapMaybe (\(k, v) -> (,) ("desc_metadata__" <>k <> "_tesim") <$> valueJSON v) $ HM.toList m
+    $ HM.fromList $ mapMaybe (\(k, v) -> (,) ("desc_metadata__" <> k <> "_tesim") <$> valueJSON v) $ HM.toList m
 
 mapMetadata :: (Metadata -> Metadata) -> Document -> Document
 mapMetadata f d = d{ documentMetadata = f $ documentMetadata d }

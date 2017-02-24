@@ -1,4 +1,4 @@
-# update interval
+# default update interval
 interval: 86400
 generators:
   # special generator for joining "date:publisher,place"
