@@ -30,30 +30,6 @@ templates:
     rights: dc.rights
     subject: dc.subject
     type: dc.type
-  ngo:
-    creator: dc.contributor.author
-    date: dc.date.issued
-    description: dc.description
-    format: dc.format
-    citation: dc.identifier.citation
-    relation: dc.identifier.citation
-    available: dc.identifier.uri
-    identifier:
-      # concatenate all field value lists
-      - dc.identifier.uri
-      - dc.identifier.citation
-    publisher:
-      # use custom generator, defined above
-      publisher:
-        place: dc.publisher.place
-        name: dc.publisher
-        date: dc.date.issued
-    rights: dc.rights
-    subject: dc.subject
-    title: dc.title
-    type:
-      # fixed value
-      string: "Report"
 collections:
   # key is unique collection identifier
   vinopal: 
@@ -71,4 +47,14 @@ collections:
   ngo:
     source: FDA
     id: 631
-    template: ngo 
+    template: traditional
+    fields:
+      publisher:
+        # use custom generator, defined above
+        publisher:
+          place: dc.publisher.place
+          name: dc.publisher
+          date: dc.date.issued
+      type:
+        # fixed value
+        string: "Report"
