@@ -33,8 +33,8 @@ updateFile f w = bracketOnError
   where
   (fd, ff) = splitFileName f
 
-updateCollection :: Bool -> Collection -> IO (Maybe Documents)
-updateCollection force c = do
+updateCollection :: Indices -> Bool -> Collection -> IO (Maybe Documents)
+updateCollection idx force c = do
   r <- if force then return True else
     fromDoesNotExist True $ do
       m <- getModificationTime $ collectionCache c
@@ -43,14 +43,14 @@ updateCollection force c = do
   d <- if r
     then handle
       (\e -> Nothing <$ hPutStrLn stderr (show (collectionSource c) ++ ": " ++ show (e :: SomeException)))
-      $ Just <$> loadCollection c
+      $ Just <$> loadCollection idx c
     else return Nothing
   mapM_ (\j -> updateFile (collectionCache c) $ \h -> BSLC.hPut h $ JSON.encode j) d
   return d
 
-updateCollections :: Bool -> Config -> IO ()
-updateCollections force Config{..} = do
-  Any u <- foldMapM (fmap (Any . isJust) . updateCollection force) configCollections
+updateCollections :: Indices -> Bool -> Config -> IO ()
+updateCollections idx force Config{..} = do
+  Any u <- foldMapM (fmap (Any . isJust) . updateCollection idx force) configCollections
   when u $
     updateFile configCache $ \h -> do
       mapM_ (\c -> fromDoesNotExist () $ do

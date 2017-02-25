@@ -5,11 +5,15 @@ module Util
   , withArrayOrNull
   , withArrayOrSingleton
   , withArrayOrNullOrSingleton
+  , addRequestPath
   ) where
 
 import qualified Data.Aeson.Types as JSON
+import qualified Data.ByteString.Char8 as BSC
 import           Data.Foldable (foldlM)
+import           Data.Monoid ((<>))
 import qualified Data.Vector as V
+import qualified Network.HTTP.Client as HTTP
 
 foldMapM :: (Foldable t, Monad m, Monoid b) => (a -> m b) -> t a -> m b
 foldMapM f = foldlM (\b a -> mappend b <$> f a) mempty
@@ -32,3 +36,6 @@ withArrayOrNullOrSingleton :: (JSON.Array -> JSON.Parser a) -> JSON.Value -> JSO
 withArrayOrNullOrSingleton f (JSON.Array a) = f a
 withArrayOrNullOrSingleton f JSON.Null = f V.empty
 withArrayOrNullOrSingleton f v = f $ V.singleton v
+
+addRequestPath :: HTTP.Request -> BSC.ByteString -> HTTP.Request
+addRequestPath q p = q{ HTTP.path = HTTP.path q <> BSC.cons '/' p }

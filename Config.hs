@@ -5,6 +5,8 @@ module Config
   , Collections
   , Config(..)
   , setCacheDir
+  , Indices
+  , loadIndices
   , loadCollection
   ) where
 
@@ -43,6 +45,7 @@ type Collections = HM.HashMap T.Text Collection
 data Config = Config
   { configCollections :: Collections
   , configCache :: FilePath
+  , configFDACollections :: Int
   }
 
 -- |@parseSource collection source_type@
@@ -72,6 +75,7 @@ parseCollection int gen tpl key = JSON.withObject "collection" $ \o -> do
 instance JSON.FromJSON Config where
   parseJSON = JSON.withObject "config" $ \o -> do
     i <- o JSON..: "interval"
+    fdac <- o JSON..: "fda" >>= (JSON..: "collections")
     g <- o JSON..:? "generators" JSON..!= mempty
     t <- withObjectOrNull "templates" (mapM $ parseGenerators g) =<< o JSON..:? "templates" JSON..!= JSON.Null
     c <- JSON.withObject "collections" (HM.traverseWithKey $ parseCollection i g t)
@@ -79,6 +83,7 @@ instance JSON.FromJSON Config where
     return Config
       { configCollections = c
       , configCache = "json"
+      , configFDACollections = fdac
       }
 
 setCacheDir :: FilePath -> Config -> Config
@@ -87,9 +92,17 @@ setCacheDir d c = c
   , configCollections = (\a -> a{ collectionCache = d </> collectionCache a }) <$> configCollections c
   }
 
-loadSource :: Source -> IO Documents
-loadSource (SourceFDA i) = loadFDA i
+data Indices = Indices
+  { fdaIndex :: HM.HashMap Int Int
+  }
 
-loadCollection :: Collection -> IO Documents
-loadCollection Collection{..} =
-  V.map (mapMetadata $ generateFields collectionFields) <$> loadSource collectionSource
+loadIndices :: Config -> IO Indices
+loadIndices conf = Indices
+  <$> loadFDAIndex (configFDACollections conf)
+
+loadSource :: Indices -> Source -> IO Documents
+loadSource Indices{ fdaIndex = idx } (SourceFDA i) = loadFDA $ HM.lookupDefault i i idx
+
+loadCollection :: Indices -> Collection -> IO Documents
+loadCollection idx Collection{..} =
+  V.map (mapMetadata $ generateFields collectionFields) <$> loadSource idx collectionSource

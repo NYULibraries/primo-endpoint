@@ -73,7 +73,9 @@ main = do
   HTTPS.setGlobalManager =<< HTTP.newManager (HTTPS.mkManagerSettings (TLSSettingsSimple True False False) Nothing)
 
   createDirectoryIfMissing False $ takeDirectory $ configCache config
-  updateCollections optForce config
+  idx <- loadIndices config
+  updateCollections idx optForce config
+
   mapM_ (\o -> outputFile o =<< BSLC.readFile (configCache config)) optOutput
 
   forM_ optServer $ \port -> do
