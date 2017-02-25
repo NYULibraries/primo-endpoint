@@ -23,15 +23,19 @@ executable primo-endpoint
   other-modules:
     Util
     Document
-    Config
-    FDA
     Fields
+    Config
+    Cache
+    FDA
     Server
   default-language:    Haskell2010
   ghc-options: -Wall
   build-depends:       
     base >=4.8 && <5,
     bytestring,
+    directory,
+    filepath,
+    time,
     text,
     unordered-containers,
     vector,

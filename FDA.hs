@@ -32,7 +32,7 @@ instance JSON.FromJSON FDACollection where
       , collectionSize = c
       }
 
-parseFDA :: T.Text -> JSON.Value -> JSON.Parser (V.Vector Document)
+parseFDA :: T.Text -> JSON.Value -> JSON.Parser Documents
 parseFDA name = withArrayOrSingleton $ mapM $ JSON.withObject "FDA item" $ \obj -> do
   (handle0, handle1) <- readHandle =<< obj JSON..: "handle"
   metadata <- readMetadata =<< obj JSON..: "metadata"
@@ -49,7 +49,7 @@ parseFDA name = withArrayOrSingleton $ mapM $ JSON.withObject "FDA item" $ \obj 
   readMetadata = JSON.withArray "FDA.metadata" $
     V.foldM (\m f -> uncurry (addMetadata m) <$> readField f) mempty
 
-loadFDA :: Int -> IO (V.Vector Document)
+loadFDA :: Int -> IO Documents
 loadFDA i = do
   req <- HTTP.addRequestHeader HTTP.hAccept "application/json"
     <$> HTTP.parseRequest ("https://archive.nyu.edu/rest/collections/" ++ show i)

@@ -1,9 +1,8 @@
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE ViewPatterns #-}
 
-import           Control.Exception (throwIO, handle, SomeException)
-import           Control.Monad (forM_, when)
-import qualified Data.Aeson as JSON
+import           Control.Exception (throwIO)
+import           Control.Monad (forM_)
 import qualified Data.ByteString.Lazy.Char8 as BSLC
 import           Data.List (foldl')
 import           Data.Maybe (fromMaybe)
@@ -12,26 +11,28 @@ import           Network.Connection (TLSSettings(..))
 import qualified Network.HTTP.Client as HTTP
 import qualified Network.HTTP.Client.TLS as HTTPS
 import qualified System.Console.GetOpt as Opt
+import           System.Directory (createDirectoryIfMissing)
 import           System.Environment (getProgName, getArgs)
 import           System.Exit (exitFailure)
+import           System.FilePath ((</>))
 import           System.IO (hPutStrLn, stderr)
-import qualified Data.Vector as V
 
-import           Util
 import           Config
-import           Document
+import           Cache
 import           Server
 
 data Opts = Opts
   { optConfig :: FilePath
-  , optOutput :: String
+  , optForce :: Bool
+  , optOutput :: Maybe String
   , optServer :: Maybe Int
   }
 
 defOpts :: Opts
 defOpts = Opts
   { optConfig = "config.yml"
-  , optOutput = "-"
+  , optForce = False
+  , optOutput = Nothing
   , optServer = Nothing
   }
 
@@ -39,7 +40,9 @@ opts :: [Opt.OptDescr (Opts -> Opts)]
 opts =
   [ Opt.Option "c" ["config"] (Opt.ReqArg (\f o -> o{ optConfig = f }) "FILE")
     ("Load configuration from FILE [" ++ optConfig defOpts ++ "]")
-  , Opt.Option "o" ["output"] (Opt.OptArg (\f o -> o{ optOutput = (fromMaybe "-" f) }) "DEST")
+  , Opt.Option "f" ["force"] (Opt.NoArg (\o -> o{ optForce = True }))
+    "Force an initial update of all collections"
+  , Opt.Option "o" ["output"] (Opt.OptArg (\f o -> o{ optOutput = Just (fromMaybe "-" f) }) "DEST")
     "Write JSON output to file [-]"
   , Opt.Option "w" ["web-server"] (Opt.OptArg (\f o -> o{ optServer = Just (maybe 80 read f) }) "PORT")
     "Run a web server on PORT [80] to serve the result"
@@ -48,9 +51,6 @@ opts =
 outputFile :: String -> BSLC.ByteString -> IO ()
 outputFile "-" = BSLC.putStr
 outputFile f = BSLC.writeFile f
-
-writeOutput :: String -> (V.Vector Document) -> IO ()
-writeOutput f = outputFile f . JSON.encode
 
 main :: IO ()
 main = do
@@ -66,11 +66,10 @@ main = do
   config <- either throwIO return =<< YAML.decodeFileEither optConfig
 
   HTTPS.setGlobalManager =<< HTTP.newManager (HTTPS.mkManagerSettings (TLSSettingsSimple True False False) Nothing)
-  writeOutput optOutput =<< foldMapM (\c -> handle
-      (\e -> mempty <$ hPutStrLn stderr (show (collectionSource c) ++ ": " ++ show (e :: SomeException)))
-      $ loadCollection c)
-    (configCollections config)
+
+  createDirectoryIfMissing False $ configCache config
+  updateCollections optForce config
+  mapM_ (\o -> outputFile o =<< BSLC.readFile (configCache config </> "json")) optOutput
 
   forM_ optServer $ \port -> do
-    when (optOutput == "-") $ fail "Web server requires output file path."
-    server port optOutput
+    server port (configCache config </> "json")

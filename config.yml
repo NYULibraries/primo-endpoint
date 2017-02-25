@@ -32,18 +32,18 @@ templates:
     type: dc.type
 collections:
   # key is unique collection identifier
-  vinopal: 
+  vinopal:
     source: FDA
-    id:  520  
-    template: traditional 
-  april: 
+    id: 520
+    template: traditional
+  april:
     source: FDA
-    id:  683  
-    template: traditional 
-  kate: 
+    id: 683
+    template: traditional
+  kate:
     source: FDA
-    id:  677  
-    template: traditional 
+    id: 677
+    template: traditional
   ngo:
     source: FDA
     id: 631

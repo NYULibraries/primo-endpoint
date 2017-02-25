@@ -7,6 +7,7 @@ module Document
   , addMetadata
   , Document(..)
   , mapMetadata
+  , Documents
   ) where
 
 import qualified Data.Aeson.Types as JSON
@@ -56,3 +57,5 @@ instance JSON.ToJSON Document where
 
 mapMetadata :: (Metadata -> Metadata) -> Document -> Document
 mapMetadata f d = d{ documentMetadata = f $ documentMetadata d }
+
+type Documents = V.Vector Document

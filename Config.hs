@@ -2,6 +2,7 @@
 {-# LANGUAGE RecordWildCards #-}
 module Config
   ( Collection(..)
+  , Collections
   , Config(..)
   , loadCollection
   ) where
@@ -11,6 +12,7 @@ import qualified Data.HashMap.Strict as HM
 import           Data.Maybe (fromMaybe)
 import           Data.Monoid ((<>))
 import qualified Data.Text as T
+import           Data.Time.Clock (NominalDiffTime)
 import qualified Data.Vector as V
 
 import           Util
@@ -18,8 +20,7 @@ import           Document
 import           Fields
 import           FDA
 
--- |Seconds, for now
-type Interval = Int
+type Interval = NominalDiffTime
 
 data Source
   = SourceFDA
@@ -34,8 +35,10 @@ data Collection = Collection
   , collectionFields :: Generators
   }
 
+type Collections = HM.HashMap T.Text Collection
+
 data Config = Config
-  { configCollections :: HM.HashMap T.Text Collection
+  { configCollections :: Collections
   , configCache :: FilePath
   }
 
@@ -74,9 +77,9 @@ instance JSON.FromJSON Config where
       , configCache = d
       }
 
-loadSource :: Source -> IO (V.Vector Document)
+loadSource :: Source -> IO Documents
 loadSource (SourceFDA i) = loadFDA i
 
-loadCollection :: Collection -> IO (V.Vector Document)
+loadCollection :: Collection -> IO Documents
 loadCollection Collection{..} =
   V.map (mapMetadata $ generateFields collectionFields) <$> loadSource collectionSource
