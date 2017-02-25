@@ -17,7 +17,7 @@ source-repository head
   type: git
   location: https://github.com/NYULibraries/primo_endpoint
 
-executable primo-import
+executable primo-endpoint
   main-is:             Main.hs
   hs-source-dirs:      .
   other-modules:

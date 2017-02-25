@@ -36,6 +36,7 @@ data Collection = Collection
 
 data Config = Config
   { configCollections :: HM.HashMap T.Text Collection
+  , configCache :: FilePath
   }
 
 -- |@parseSource collection source_type@
@@ -64,11 +65,13 @@ parseCollection int gen tpl = JSON.withObject "collection" $ \o -> do
 instance JSON.FromJSON Config where
   parseJSON = JSON.withObject "config" $ \o -> do
     i <- o JSON..: "interval"
+    d <- o JSON..: "cache"
     g <- o JSON..:? "generators" JSON..!= mempty
     t <- withObjectOrNull "templates" (mapM $ parseGenerators g) =<< o JSON..:? "templates" JSON..!= JSON.Null
     c <- JSON.withObject "collections" (mapM $ parseCollection i g t) =<< o JSON..: "collections"
     return Config
       { configCollections = c
+      , configCache = d
       }
 
 loadSource :: Source -> IO (V.Vector Document)

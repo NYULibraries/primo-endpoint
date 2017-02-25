@@ -1,5 +1,6 @@
 # default update interval
 interval: 86400
+cache: /tmp/primo-endpoint.cache
 generators:
   # special generator for joining "date:publisher,place"
   publisher:
