@@ -1,3 +1,4 @@
+{-# LANGUAGE CPP #-}
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE ViewPatterns #-}
 
@@ -11,10 +12,16 @@ import           Network.Connection (TLSSettings(..))
 import qualified Network.HTTP.Client as HTTP
 import qualified Network.HTTP.Client.TLS as HTTPS
 import qualified System.Console.GetOpt as Opt
-import           System.Directory (createDirectoryIfMissing, getXdgDirectory, XdgDirectory(XdgCache))
+import           System.Directory (createDirectoryIfMissing
+#if MIN_VERSION_directory(1,2,3)
+  , getXdgDirectory, XdgDirectory(XdgCache)
+#else
+  , getHomeDirectory
+#endif
+  )
 import           System.Environment (getProgName, getArgs)
 import           System.Exit (exitFailure)
-import           System.FilePath (takeDirectory)
+import           System.FilePath ((</>), takeDirectory)
 import           System.IO (hPutStrLn, stderr)
 
 import           Config
@@ -67,7 +74,13 @@ main = do
       hPutStrLn stderr $ Opt.usageInfo ("Usage: " ++ prog ++ " [OPTION...]") opts
       exitFailure
   
-  cache <- maybe (getXdgDirectory XdgCache "primo-endpoint") return optCache
+  cache <- maybe 
+#if MIN_VERSION_directory(1,2,3)
+    (getXdgDirectory XdgCache "primo-endpoint")
+#else
+    ((</> ".cache" </> "primo-endpoint") <$> getHomeDirectory)
+#endif
+    return optCache
   config <- either throwIO (return . setCacheDir cache) =<< YAML.decodeFileEither optConfig
 
   HTTPS.setGlobalManager =<< HTTP.newManager (HTTPS.mkManagerSettings (TLSSettingsSimple True False False) Nothing)
