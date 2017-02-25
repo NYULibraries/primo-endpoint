@@ -11,7 +11,7 @@ import           Network.Connection (TLSSettings(..))
 import qualified Network.HTTP.Client as HTTP
 import qualified Network.HTTP.Client.TLS as HTTPS
 import qualified System.Console.GetOpt as Opt
-import           System.Directory (createDirectoryIfMissing)
+import           System.Directory (createDirectoryIfMissing, getXdgDirectory, XdgDirectory(XdgCache))
 import           System.Environment (getProgName, getArgs)
 import           System.Exit (exitFailure)
 import           System.FilePath (takeDirectory)
@@ -23,6 +23,7 @@ import           Server
 
 data Opts = Opts
   { optConfig :: FilePath
+  , optCache :: Maybe FilePath
   , optForce :: Bool
   , optOutput :: Maybe String
   , optServer :: Maybe Int
@@ -31,6 +32,7 @@ data Opts = Opts
 defOpts :: Opts
 defOpts = Opts
   { optConfig = "config.yml"
+  , optCache = Nothing
   , optForce = False
   , optOutput = Nothing
   , optServer = Nothing
@@ -40,6 +42,8 @@ opts :: [Opt.OptDescr (Opts -> Opts)]
 opts =
   [ Opt.Option "c" ["config"] (Opt.ReqArg (\f o -> o{ optConfig = f }) "FILE")
     ("Load configuration from FILE [" ++ optConfig defOpts ++ "]")
+  , Opt.Option "C" ["cache"] (Opt.ReqArg (\f o -> o{ optCache = Just f }) "DIR")
+    "Use DIR for cache files [$XDR_CACHE_DIR/primo-endpoint]"
   , Opt.Option "f" ["force"] (Opt.NoArg (\o -> o{ optForce = True }))
     "Force an initial update of all collections"
   , Opt.Option "o" ["output"] (Opt.OptArg (\f o -> o{ optOutput = Just (fromMaybe "-" f) }) "DEST")
@@ -63,7 +67,8 @@ main = do
       hPutStrLn stderr $ Opt.usageInfo ("Usage: " ++ prog ++ " [OPTION...]") opts
       exitFailure
   
-  config <- either throwIO return =<< YAML.decodeFileEither optConfig
+  cache <- maybe (getXdgDirectory XdgCache "primo-endpoint") return optCache
+  config <- either throwIO (return . setCacheDir cache) =<< YAML.decodeFileEither optConfig
 
   HTTPS.setGlobalManager =<< HTTP.newManager (HTTPS.mkManagerSettings (TLSSettingsSimple True False False) Nothing)
 

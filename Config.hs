@@ -4,6 +4,7 @@ module Config
   ( Collection(..)
   , Collections
   , Config(..)
+  , setCacheDir
   , loadCollection
   ) where
 
@@ -50,15 +51,15 @@ parseSource o "FDA" = SourceFDA <$> o JSON..: "id"
 parseSource _ s = fail $ "Unknown collection source: " ++ show s
 
 -- |@parseCollection generators templates key value@
-parseCollection :: Interval -> Generators -> HM.HashMap T.Text Generators -> FilePath -> JSON.Value -> JSON.Parser Collection
-parseCollection int gen tpl cache = JSON.withObject "collection" $ \o -> do
+parseCollection :: Interval -> Generators -> HM.HashMap T.Text Generators -> T.Text -> JSON.Value -> JSON.Parser Collection
+parseCollection int gen tpl key = JSON.withObject "collection" $ \o -> do
   s <- parseSource o =<< o JSON..: "source"
   i <- o JSON..:? "interval"
   n <- o JSON..:? "name"
   f <- parseGenerators gen =<< o JSON..:? "fields" JSON..!= JSON.Null
   t <- withArrayOrNullOrSingleton (foldMapM getTemplate) =<< o JSON..:? "template" JSON..!= JSON.Null
   return Collection
-    { collectionCache = cache
+    { collectionCache = T.unpack key <.> "json"
     , collectionSource = s
     , collectionInterval = fromMaybe int i
     , collectionName = n
@@ -71,16 +72,20 @@ parseCollection int gen tpl cache = JSON.withObject "collection" $ \o -> do
 instance JSON.FromJSON Config where
   parseJSON = JSON.withObject "config" $ \o -> do
     i <- o JSON..: "interval"
-    d <- o JSON..: "cache"
     g <- o JSON..:? "generators" JSON..!= mempty
     t <- withObjectOrNull "templates" (mapM $ parseGenerators g) =<< o JSON..:? "templates" JSON..!= JSON.Null
-    c <- JSON.withObject "collections" (HM.traverseWithKey
-        $ parseCollection i g t . (d </>) . (<.> "json") . T.unpack)
+    c <- JSON.withObject "collections" (HM.traverseWithKey $ parseCollection i g t)
       =<< o JSON..: "collections"
     return Config
       { configCollections = c
-      , configCache = d </> "json"
+      , configCache = "json"
       }
+
+setCacheDir :: FilePath -> Config -> Config
+setCacheDir d c = c
+  { configCache = d </> configCache c
+  , configCollections = (\a -> a{ collectionCache = d </> collectionCache a }) <$> configCollections c
+  }
 
 loadSource :: Source -> IO Documents
 loadSource (SourceFDA i) = loadFDA i
