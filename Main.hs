@@ -14,7 +14,7 @@ import qualified System.Console.GetOpt as Opt
 import           System.Directory (createDirectoryIfMissing)
 import           System.Environment (getProgName, getArgs)
 import           System.Exit (exitFailure)
-import           System.FilePath ((</>))
+import           System.FilePath (takeDirectory)
 import           System.IO (hPutStrLn, stderr)
 
 import           Config
@@ -67,9 +67,9 @@ main = do
 
   HTTPS.setGlobalManager =<< HTTP.newManager (HTTPS.mkManagerSettings (TLSSettingsSimple True False False) Nothing)
 
-  createDirectoryIfMissing False $ configCache config
+  createDirectoryIfMissing False $ takeDirectory $ configCache config
   updateCollections optForce config
-  mapM_ (\o -> outputFile o =<< BSLC.readFile (configCache config </> "json")) optOutput
+  mapM_ (\o -> outputFile o =<< BSLC.readFile (configCache config)) optOutput
 
   forM_ optServer $ \port -> do
-    server port (configCache config </> "json")
+    server port (configCache config)

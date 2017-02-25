@@ -14,6 +14,7 @@ import           Data.Monoid ((<>))
 import qualified Data.Text as T
 import           Data.Time.Clock (NominalDiffTime)
 import qualified Data.Vector as V
+import           System.FilePath ((</>), (<.>))
 
 import           Util
 import           Document
@@ -30,6 +31,7 @@ data Source
 
 data Collection = Collection
   { collectionSource :: Source
+  , collectionCache :: FilePath
   , collectionInterval :: Interval
   , collectionName :: Maybe T.Text
   , collectionFields :: Generators
@@ -48,15 +50,16 @@ parseSource o "FDA" = SourceFDA <$> o JSON..: "id"
 parseSource _ s = fail $ "Unknown collection source: " ++ show s
 
 -- |@parseCollection generators templates key value@
-parseCollection :: Interval -> Generators -> HM.HashMap T.Text Generators -> JSON.Value -> JSON.Parser Collection
-parseCollection int gen tpl = JSON.withObject "collection" $ \o -> do
+parseCollection :: Interval -> Generators -> HM.HashMap T.Text Generators -> FilePath -> JSON.Value -> JSON.Parser Collection
+parseCollection int gen tpl cache = JSON.withObject "collection" $ \o -> do
   s <- parseSource o =<< o JSON..: "source"
   i <- o JSON..:? "interval"
   n <- o JSON..:? "name"
   f <- parseGenerators gen =<< o JSON..:? "fields" JSON..!= JSON.Null
   t <- withArrayOrNullOrSingleton (foldMapM getTemplate) =<< o JSON..:? "template" JSON..!= JSON.Null
   return Collection
-    { collectionSource = s
+    { collectionCache = cache
+    , collectionSource = s
     , collectionInterval = fromMaybe int i
     , collectionName = n
     , collectionFields = f <> t
@@ -71,10 +74,12 @@ instance JSON.FromJSON Config where
     d <- o JSON..: "cache"
     g <- o JSON..:? "generators" JSON..!= mempty
     t <- withObjectOrNull "templates" (mapM $ parseGenerators g) =<< o JSON..:? "templates" JSON..!= JSON.Null
-    c <- JSON.withObject "collections" (mapM $ parseCollection i g t) =<< o JSON..: "collections"
+    c <- JSON.withObject "collections" (HM.traverseWithKey
+        $ parseCollection i g t . (d </>) . (<.> "json") . T.unpack)
+      =<< o JSON..: "collections"
     return Config
       { configCollections = c
-      , configCache = d
+      , configCache = d </> "json"
       }
 
 loadSource :: Source -> IO Documents
