@@ -3,12 +3,43 @@ module Server
   ( server
   ) where
 
-import           Network.HTTP.Types (ok200, methodNotAllowed405, hAccept, hContentType)
+import qualified Data.ByteString.Char8 as BSC
+import qualified Data.HashMap.Strict as HM
+import           Data.Time.Clock (UTCTime, getCurrentTime)
+import           Data.Time.Format (formatTime, defaultTimeLocale)
+import           Network.HTTP.Types (ok200, notFound404, methodNotAllowed405, hAccept, hContentType, hLastModified, hDate)
 import qualified Network.Wai as Wai
 import qualified Network.Wai.Handler.Warp as Warp
 
-server :: Int -> FilePath -> IO ()
-server port file = Warp.run port $ \req resp -> resp $ do
-  case Wai.requestMethod req of
-    "GET" -> Wai.responseFile ok200 [(hContentType, "application/json")] file Nothing
-    _ -> Wai.responseLBS methodNotAllowed405 [(hAccept, "GET")] mempty
+import           Config
+import           Cache
+
+resolvePath :: Config -> Wai.Request -> Maybe (FilePath, UTCTime -> IO UTCTime)
+resolvePath conf req = case Wai.pathInfo req of
+  [] ->
+    Just (configCache conf, updateCollections force conf)
+  [s] | Just c <- HM.lookup s (configCollections conf) ->
+    Just (collectionCache c, updateCollection force c)
+  _ -> Nothing
+  where
+  force = Just (Just "1") == lookup "force" (Wai.queryString req)
+
+formatDate :: UTCTime -> BSC.ByteString
+formatDate = BSC.pack . formatTime defaultTimeLocale "%a, %d %b %Y %T GMT"
+
+server :: Int -> Config -> IO ()
+server port conf = Warp.run port $ \req resp -> resp =<<
+  maybe
+    (return $ Wai.responseLBS notFound404 [] mempty)
+    (\(f, u) -> case Wai.requestMethod req of
+      "GET" -> do
+        t <- getCurrentTime
+        m <- u t
+        return $ Wai.responseFile ok200
+          [ (hContentType, "application/json")
+          , (hLastModified, formatDate m)
+          , (hDate, formatDate t)
+          ] f Nothing
+      _ -> return $ Wai.responseLBS methodNotAllowed405 [(hAccept, "GET")] mempty
+    )
+    (resolvePath conf req)

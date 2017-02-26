@@ -5,6 +5,8 @@ module Util
   , withArrayOrNull
   , withArrayOrSingleton
   , withArrayOrNullOrSingleton
+  , parseM
+  , parseJSONM
   , addRequestPath
   ) where
 
@@ -36,6 +38,12 @@ withArrayOrNullOrSingleton :: (JSON.Array -> JSON.Parser a) -> JSON.Value -> JSO
 withArrayOrNullOrSingleton f (JSON.Array a) = f a
 withArrayOrNullOrSingleton f JSON.Null = f V.empty
 withArrayOrNullOrSingleton f v = f $ V.singleton v
+
+parseM :: Monad m => (a -> JSON.Parser b) -> a -> m b
+parseM f = either fail return . JSON.parseEither f
+
+parseJSONM :: (Monad m, JSON.FromJSON a) => JSON.Value -> m a
+parseJSONM = parseM JSON.parseJSON
 
 addRequestPath :: HTTP.Request -> BSC.ByteString -> HTTP.Request
 addRequestPath q p = q{ HTTP.path = HTTP.path q <> BSC.cons '/' p }

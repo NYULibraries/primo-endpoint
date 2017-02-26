@@ -36,19 +36,19 @@ collections:
   # key is unique collection identifier
   vinopal:
     source: FDA
-    id: 27729
+    hdl: 27729
     template: traditional
   april:
     source: FDA
-    id: 34767
+    hdl: 34767
     template: traditional
   kate:
     source: FDA
-    id: 34600
+    hdl: 34600
     template: traditional
   ngo:
     source: FDA
-    id: 33605
+    hdl: 33605
     template: traditional
     fields:
       publisher:

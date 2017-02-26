@@ -2,12 +2,11 @@
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE ViewPatterns #-}
 
-import           Control.Exception (throwIO)
 import           Control.Monad (forM_)
 import qualified Data.ByteString.Lazy.Char8 as BSLC
 import           Data.List (foldl')
 import           Data.Maybe (fromMaybe)
-import qualified Data.Yaml as YAML
+import           Data.Time.Clock (getCurrentTime)
 import           Network.Connection (TLSSettings(..))
 import qualified Network.HTTP.Client as HTTP
 import qualified Network.HTTP.Client.TLS as HTTPS
@@ -21,7 +20,6 @@ import           System.Directory (createDirectoryIfMissing
   )
 import           System.Environment (getProgName, getArgs)
 import           System.Exit (exitFailure)
-import           System.FilePath ((</>), takeDirectory)
 import           System.IO (hPutStrLn, stderr)
 
 import           Config
@@ -74,6 +72,8 @@ main = do
       hPutStrLn stderr $ Opt.usageInfo ("Usage: " ++ prog ++ " [OPTION...]") opts
       exitFailure
   
+  HTTPS.setGlobalManager =<< HTTP.newManager (HTTPS.mkManagerSettings (TLSSettingsSimple True False False) Nothing)
+
   cache <- maybe 
 #if MIN_VERSION_directory(1,2,3)
     (getXdgDirectory XdgCache "primo-endpoint")
@@ -81,15 +81,12 @@ main = do
     ((</> ".cache" </> "primo-endpoint") <$> getHomeDirectory)
 #endif
     return optCache
-  config <- either throwIO (return . setCacheDir cache) =<< YAML.decodeFileEither optConfig
+  createDirectoryIfMissing False cache
+  config <- loadConfig cache optConfig
 
-  HTTPS.setGlobalManager =<< HTTP.newManager (HTTPS.mkManagerSettings (TLSSettingsSimple True False False) Nothing)
-
-  createDirectoryIfMissing False $ takeDirectory $ configCache config
-  idx <- loadIndices config
-  updateCollections idx optForce config
+  _ <- updateCollections optForce config =<< getCurrentTime
 
   mapM_ (\o -> outputFile o =<< BSLC.readFile (configCache config)) optOutput
 
   forM_ optServer $ \port -> do
-    server port (configCache config)
+    server port config

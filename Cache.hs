@@ -1,68 +1,93 @@
 {-# LANGUAGE RecordWildCards #-}
 module Cache
-  ( updateCollections
+  ( updateCollection
+  , updateCollections
   ) where
 
 import           Control.Exception (bracketOnError, handle, handleJust, SomeException)
-import           Control.Monad (guard, when)
+import           Control.Monad (guard, liftM2)
 import qualified Data.Aeson as JSON
 import qualified Data.ByteString.Lazy.Char8 as BSLC
-import           Data.Maybe (isJust)
 import           Data.Monoid (Any(Any))
-import           Data.Time.Clock (getCurrentTime, diffUTCTime)
+import           Data.Time.Clock (UTCTime(..), diffUTCTime)
 import           System.FilePath (splitFileName)
 import           System.Directory (removeFile, renameFile, getModificationTime)
 import           System.IO (Handle, IOMode(ReadMode), SeekMode(AbsoluteSeek), stderr, openBinaryFile, openTempFileWithDefaultPermissions, hFileSize, hSeek, hPutChar, hPutStrLn, hClose)
 import           System.IO.Error (isDoesNotExistError)
 
 import           Util
-import           Document
 import           Config
 
 fromDoesNotExist :: a -> IO a -> IO a
 fromDoesNotExist d = handleJust (guard . isDoesNotExistError) (\_ -> return d)
 
-updateFile :: FilePath -> (Handle -> IO ()) -> IO ()
+getModificationTime0 :: FilePath -> IO UTCTime
+getModificationTime0 = fromDoesNotExist (UTCTime (toEnum 0) 0) . getModificationTime
+
+readBinaryFile :: FilePath -> (Handle -> IO a) -> IO a
+readBinaryFile f h = bracketOnError
+  (openBinaryFile f ReadMode)
+  hClose
+  h
+
+compareFiles :: FilePath -> FilePath -> IO Bool
+compareFiles f g = fromDoesNotExist False $ readBinaryFile f $ \h -> readBinaryFile g $ \i -> do
+  x <- hFileSize h
+  y <- hFileSize i
+  if x == y
+    then liftM2 (==)
+      (BSLC.hGetContents h)
+      (BSLC.hGetContents i)
+    else return False
+
+updateFile :: FilePath -> (Handle -> IO ()) -> IO Bool
 updateFile f w = bracketOnError
   (openTempFileWithDefaultPermissions fd ff)
-  (removeFile . fst)
+  (\(tf, th) -> hClose th >> removeFile tf)
   (\(tf, th) -> do
     w th
     hClose th
-    renameFile tf f)
+    let r = False -- r <- compareFiles tf f -- FIXME need two dates
+    if r
+      then False <$ removeFile tf
+      else True  <$ renameFile tf f)
   where
   (fd, ff) = splitFileName f
 
-updateCollection :: Indices -> Bool -> Collection -> IO (Maybe Documents)
-updateCollection idx force c = do
-  r <- if force then return True else
-    fromDoesNotExist True $ do
-      m <- getModificationTime $ collectionCache c
-      t <- getCurrentTime
-      return $ diffUTCTime t m >= collectionInterval c
-  d <- if r
-    then handle
-      (\e -> Nothing <$ hPutStrLn stderr (show (collectionSource c) ++ ": " ++ show (e :: SomeException)))
-      $ Just <$> loadCollection idx c
-    else return Nothing
-  mapM_ (\j -> updateFile (collectionCache c) $ \h -> BSLC.hPut h $ JSON.encode j) d
-  return d
+updateCollection :: Bool -> Collection -> UTCTime -> IO UTCTime
+updateCollection force c@Collection{ collectionCache = f } t = do
+  r <- if force then return Nothing else do
+    m <- getModificationTime0 f
+    return $ m <$ guard (diffUTCTime t m < collectionInterval c)
+  maybe
+    (do
+      d <- handle
+        (\e -> Nothing <$ hPutStrLn stderr (show (collectionSource c) ++ ": " ++ show (e :: SomeException)))
+        $ Just <$> loadCollection c
+      mapM_ (\j -> updateFile f $ \h -> BSLC.hPut h $ JSON.encode j) d
+      getModificationTime0 f)
+    return
+    r
 
-updateCollections :: Indices -> Bool -> Config -> IO ()
-updateCollections idx force Config{..} = do
-  Any u <- foldMapM (fmap (Any . isJust) . updateCollection idx force) configCollections
-  when u $
-    updateFile configCache $ \h -> do
-      mapM_ (\c -> fromDoesNotExist () $ do
-          r <- openBinaryFile (collectionCache c) ReadMode
-          z <- hFileSize r
-          if z > 2
-            then do
-              hPutChar h ','
-              BSLC.hPut h . BSLC.init . BSLC.tail =<< BSLC.hGetContents r
-            else
-              hClose r)
-        configCollections
-      hPutChar h ']'
-      hSeek h AbsoluteSeek 0
-      hPutChar h '['
+updateCollections :: Bool -> Config -> UTCTime -> IO UTCTime
+updateCollections force Config{ configCache = f, configCollections = l } t = do
+  m <- getModificationTime0 f
+  Any u <- foldMapM (\c -> Any . (m <) <$> updateCollection force c t) l
+  r <- if u
+    then
+      updateFile f $ \h -> do
+        mapM_ (\c -> fromDoesNotExist () $
+            readBinaryFile (collectionCache c) $ \r -> do
+              z <- hFileSize r
+              if z > 2
+                then do
+                  hPutChar h ','
+                  BSLC.hPut h . BSLC.init . BSLC.tail =<< BSLC.hGetContents r
+                else
+                  hClose h)
+          l
+        hPutChar h ']'
+        hSeek h AbsoluteSeek 0
+        hPutChar h '['
+    else return False
+  if r then getModificationTime0 f else return m
