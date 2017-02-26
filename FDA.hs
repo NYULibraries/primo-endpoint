@@ -12,10 +12,13 @@ import qualified Data.HashMap.Strict as HM
 import           Data.Monoid ((<>))
 import qualified Data.Text as T
 import qualified Data.Text.Read as T (decimal)
+import           Data.Time.Clock (UTCTime)
+import           Data.Time.LocalTime (LocalTime, getCurrentTimeZone, getTimeZone, localTimeToUTC)
 import qualified Data.Vector as V
 import qualified Network.HTTP.Client as HTTP
 import qualified Network.HTTP.Simple as HTTP
 import qualified Network.HTTP.Types as HTTP
+import           System.IO.Unsafe (unsafePerformIO)
 
 import           Util
 import           Document
@@ -45,13 +48,21 @@ instance JSON.FromJSON FDACollection where
     <*> o JSON..: "name"
     <*> o JSON..: "numberItems"
 
+guessLocalTime :: LocalTime -> UTCTime
+guessLocalTime l = unsafePerformIO $ do
+  z <- getCurrentTimeZone
+  z' <- getTimeZone $ localTimeToUTC z l
+  return $ localTimeToUTC z' l
+
 parseFDA :: T.Text -> JSON.Value -> JSON.Parser Documents
 parseFDA name = withArrayOrSingleton $ mapM $ JSON.withObject "FDA item" $ \obj -> do
   FDAHandle hdl0 hdl1 <- obj JSON..: "handle"
+  mtime <- obj JSON..: "lastModified"
   metadata <- readMetadata =<< obj JSON..: "metadata"
   return Document
     { documentID = "fda:hdl-handle-net-" <> (T.pack $ show hdl0) <> "-" <> (T.pack $ show hdl1)
     , documentCollection = name
+    , documentModified = guessLocalTime mtime
     , documentMetadata = metadata
     }
   where
