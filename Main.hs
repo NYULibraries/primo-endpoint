@@ -20,6 +20,9 @@ import           System.Directory (createDirectoryIfMissing
   )
 import           System.Environment (getProgName, getArgs)
 import           System.Exit (exitFailure)
+#if !MIN_VERSION_directory(1,2,3)
+import           System.FilePath ((</>))
+#endif
 import           System.IO (hPutStrLn, stderr)
 
 import           Config
