@@ -36,6 +36,7 @@ executable primo-endpoint
     directory,
     filepath,
     time,
+    transformers,
     text,
     unordered-containers,
     vector,

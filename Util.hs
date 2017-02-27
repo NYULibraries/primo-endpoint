@@ -1,5 +1,7 @@
 module Util
   ( foldMapM
+  , fromDoesNotExist
+  , getModificationTime0
   , jsonOr
   , withObjectOrNull
   , withArrayOrNull
@@ -10,15 +12,26 @@ module Util
   , addRequestPath
   ) where
 
+import           Control.Exception (handleJust)
+import           Control.Monad (guard)
 import qualified Data.Aeson.Types as JSON
 import qualified Data.ByteString.Char8 as BSC
 import           Data.Foldable (foldlM)
 import           Data.Monoid ((<>))
+import           Data.Time.Clock (UTCTime(..))
 import qualified Data.Vector as V
 import qualified Network.HTTP.Client as HTTP
+import           System.Directory (getModificationTime)
+import           System.IO.Error (isDoesNotExistError)
 
 foldMapM :: (Foldable t, Monad m, Monoid b) => (a -> m b) -> t a -> m b
 foldMapM f = foldlM (\b a -> mappend b <$> f a) mempty
+
+fromDoesNotExist :: a -> IO a -> IO a
+fromDoesNotExist d = handleJust (guard . isDoesNotExistError) (\_ -> return d)
+
+getModificationTime0 :: FilePath -> IO UTCTime
+getModificationTime0 = fromDoesNotExist (UTCTime (toEnum 0) 0) . getModificationTime
 
 jsonOr :: JSON.Value -> JSON.Value -> JSON.Value
 jsonOr JSON.Null a = a

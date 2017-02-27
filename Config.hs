@@ -8,15 +8,18 @@ module Config
   , loadCollection
   ) where
 
+import           Control.Monad (guard, liftM2)
+import           Control.Monad.Trans.Maybe (MaybeT(..))
 import qualified Data.Aeson.Types as JSON
 import qualified Data.HashMap.Strict as HM
 import           Data.Maybe (fromMaybe)
 import           Data.Monoid ((<>))
 import qualified Data.Text as T
-import           Data.Time.Clock (NominalDiffTime)
+import           Data.Time.Clock (NominalDiffTime, getCurrentTime, diffUTCTime)
 import qualified Data.Vector as V
 import qualified Data.Yaml as YAML
 import           System.FilePath ((</>), (<.>))
+import           Text.Read (readMaybe)
 
 import           Util
 import           Document
@@ -26,25 +29,25 @@ import           FDA
 type Interval = NominalDiffTime
 
 data PreConfig = PreConfig
-  { configFDACollections :: Int
+  { configInterval :: Interval
+  , configFDACollections :: Int
   }
 
 instance JSON.FromJSON PreConfig where
   parseJSON = JSON.withObject "pre-config" $ \o -> PreConfig
-    <$> (o JSON..: "fda" >>= (JSON..: "collections"))
+    <$> o JSON..: "interval"
+    <*> (o JSON..: "fda" >>= (JSON..: "collections"))
 
 data Indices = Indices
   { fdaIndex :: HM.HashMap Int Int
-  }
+  } deriving (Show, Read)
 
 loadIndices :: PreConfig -> IO Indices
 loadIndices conf = Indices
   <$> loadFDAIndex (configFDACollections conf)
 
 data Source
-  = SourceFDA
-    { _fdaCollectionId :: Int
-    }
+  = SourceFDA Int
   deriving (Show)
 
 data Collection = Collection
@@ -69,8 +72,8 @@ parseSource idx o "FDA" = SourceFDA <$>
 parseSource _ _ s = fail $ "Unknown collection source: " ++ show s
 
 -- |@parseCollection generators templates key value@
-parseCollection :: Indices -> FilePath -> Interval -> Generators -> HM.HashMap T.Text Generators -> T.Text -> JSON.Value -> JSON.Parser Collection
-parseCollection idx cache int gen tpl key = JSON.withObject "collection" $ \o -> do
+parseCollection :: PreConfig -> Indices -> FilePath -> Generators -> HM.HashMap T.Text Generators -> T.Text -> JSON.Value -> JSON.Parser Collection
+parseCollection pc idx cache gen tpl key = JSON.withObject "collection" $ \o -> do
   s <- parseSource idx o =<< o JSON..: "source"
   i <- o JSON..:? "interval"
   n <- o JSON..:? "name"
@@ -79,7 +82,7 @@ parseCollection idx cache int gen tpl key = JSON.withObject "collection" $ \o ->
   return Collection
     { collectionCache = cache </> T.unpack key <.> "json"
     , collectionSource = s
-    , collectionInterval = fromMaybe int i
+    , collectionInterval = fromMaybe (configInterval pc) i
     , collectionName = n
     , collectionFields = f <> t
     }
@@ -87,24 +90,34 @@ parseCollection idx cache int gen tpl key = JSON.withObject "collection" $ \o ->
   getTemplate = JSON.withText "template name" $ \s ->
     maybe (fail $ "Undefined template: " ++ show s) return $ HM.lookup s tpl
 
-parseConfig :: Indices -> FilePath -> JSON.Value -> JSON.Parser Config
-parseConfig idx cache = JSON.withObject "config" $ \o -> do
-  i <- o JSON..: "interval"
+parseConfig :: PreConfig -> Indices -> FilePath -> JSON.Value -> JSON.Parser Config
+parseConfig pc idx cache = JSON.withObject "config" $ \o -> do
   g <- o JSON..:? "generators" JSON..!= mempty
   t <- withObjectOrNull "templates" (mapM $ parseGenerators g) =<< o JSON..:? "templates" JSON..!= JSON.Null
-  c <- JSON.withObject "collections" (HM.traverseWithKey $ parseCollection idx cache i g t)
+  c <- JSON.withObject "collections" (HM.traverseWithKey $ parseCollection pc idx cache g t)
     =<< o JSON..: "collections"
   return Config
     { configCollections = c
     , configCache = cache </> "json"
     }
 
-loadConfig :: FilePath -> FilePath -> IO Config
-loadConfig cache conf = do
+updateIndices :: Bool -> PreConfig -> FilePath -> IO Indices
+updateIndices force pc f = maybe (do
+    idx <- loadIndices pc
+    writeFile f $ show idx
+    return idx)
+  return =<< runMaybeT (do
+    guard $ not force
+    d <- MaybeT $ Just <$> liftM2 diffUTCTime getCurrentTime (getModificationTime0 f)
+    guard $ d < configInterval pc
+    MaybeT $ readMaybe <$> readFile f)
+
+loadConfig :: Bool -> FilePath -> FilePath -> IO Config
+loadConfig force cache conf = do
   Just jc <- YAML.decodeFile conf
   pc <- parseJSONM jc
-  idx <- loadIndices pc
-  parseM (parseConfig idx cache) jc
+  idx <- updateIndices force pc (cache </> "index")
+  parseM (parseConfig pc idx cache) jc
 
 loadSource :: Source -> IO Documents
 loadSource (SourceFDA i) = loadFDA i

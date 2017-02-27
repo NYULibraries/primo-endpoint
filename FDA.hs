@@ -13,7 +13,7 @@ import           Data.Monoid ((<>))
 import qualified Data.Text as T
 import qualified Data.Text.Read as T (decimal)
 import           Data.Time.Clock (UTCTime)
-import           Data.Time.LocalTime (LocalTime, getCurrentTimeZone, getTimeZone, localTimeToUTC)
+import           Data.Time.LocalTime (LocalTime, getTimeZone, localTimeToUTC, utc)
 import qualified Data.Vector as V
 import qualified Network.HTTP.Client as HTTP
 import qualified Network.HTTP.Simple as HTTP
@@ -50,7 +50,7 @@ instance JSON.FromJSON FDACollection where
 
 guessLocalTime :: LocalTime -> UTCTime
 guessLocalTime l = unsafePerformIO $ do
-  z <- getCurrentTimeZone
+  z <- getTimeZone $ localTimeToUTC utc l
   z' <- getTimeZone $ localTimeToUTC z l
   return $ localTimeToUTC z' l
 

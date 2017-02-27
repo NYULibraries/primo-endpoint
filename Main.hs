@@ -85,7 +85,7 @@ main = do
 #endif
     return optCache
   createDirectoryIfMissing False cache
-  config <- loadConfig cache optConfig
+  config <- loadConfig optForce cache optConfig
 
   _ <- updateCollections optForce config =<< getCurrentTime
 

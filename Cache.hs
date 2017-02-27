@@ -4,25 +4,18 @@ module Cache
   , updateCollections
   ) where
 
-import           Control.Exception (bracketOnError, handle, handleJust, SomeException)
+import           Control.Exception (bracketOnError, handle, SomeException)
 import           Control.Monad (guard, liftM2)
 import qualified Data.Aeson as JSON
 import qualified Data.ByteString.Lazy.Char8 as BSLC
 import           Data.Monoid (Any(Any))
 import           Data.Time.Clock (UTCTime(..), diffUTCTime)
 import           System.FilePath (splitFileName)
-import           System.Directory (removeFile, renameFile, getModificationTime)
+import           System.Directory (removeFile, renameFile)
 import           System.IO (Handle, IOMode(ReadMode), SeekMode(AbsoluteSeek), stderr, openBinaryFile, openTempFileWithDefaultPermissions, hFileSize, hSeek, hPutChar, hPutStrLn, hClose)
-import           System.IO.Error (isDoesNotExistError)
 
 import           Util
 import           Config
-
-fromDoesNotExist :: a -> IO a -> IO a
-fromDoesNotExist d = handleJust (guard . isDoesNotExistError) (\_ -> return d)
-
-getModificationTime0 :: FilePath -> IO UTCTime
-getModificationTime0 = fromDoesNotExist (UTCTime (toEnum 0) 0) . getModificationTime
 
 readBinaryFile :: FilePath -> (Handle -> IO a) -> IO a
 readBinaryFile f h = bracketOnError
