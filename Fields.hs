@@ -10,8 +10,10 @@ module Fields
 import qualified Data.Aeson.Types as JSON
 import           Data.Char (isAlpha)
 import qualified Data.HashMap.Strict as HM
+import           Data.Maybe (fromMaybe)
 import           Data.Monoid ((<>))
 import qualified Data.Text as T
+import           Data.Time.Format (parseTimeM, defaultTimeLocale)
 import qualified Data.Vector as V
 
 import           Util
@@ -20,6 +22,10 @@ import           Document
 data Generator
   = GeneratorString T.Text
   | GeneratorField T.Text
+  | GeneratorMap
+    { _generatorMap :: T.Text -> Value
+    , _generator :: Generator
+    }
   | GeneratorList [Generator]
   | GeneratorPaste [Generator] -- cross-product
   | GeneratorOr
@@ -41,6 +47,7 @@ generate :: Metadata -> Generator -> Value
 generate _ (GeneratorString x) = Value [x]
 generate m (GeneratorList l) = foldMap (generate m) l
 generate m (GeneratorField f) = HM.lookupDefault mempty f m
+generate m (GeneratorMap f g) = foldMap f $ values $ generate m g
 generate m (GeneratorOr g d) = generate m g `valueOr` generate m d
 generate _ (GeneratorPaste []) = Value [T.empty]
 generate m (GeneratorPaste [x]) = generate m x
@@ -63,6 +70,14 @@ parseGeneratorKey _ "string" v =
   JSON.withText "string literal" (return . GeneratorString) v
 parseGeneratorKey g "paste" v =
   JSON.withArray "paste components" (fmap GeneratorPaste . mapM (parseGenerator g) . V.toList) v
+parseGeneratorKey g "date" v =
+  JSON.withObject "date parser" (\o -> do
+    fmt <- o JSON..: "format"
+    val <- parseGenerator g =<< o JSON..: "value"
+    return $ GeneratorMap
+      (fromMaybe mempty . parseTimeM True defaultTimeLocale fmt . T.unpack)
+      val)
+    v
 parseGeneratorKey g k JSON.Null | Just m <- HM.lookup k g = return m
 parseGeneratorKey g k v | Just m <- HM.lookup k g =
   JSON.withObject "generator arguments" (fmap (`GeneratorWith` m) . mapM (parseGenerator $ HM.delete k g)) v

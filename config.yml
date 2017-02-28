@@ -32,6 +32,32 @@ templates:
     rights: dc.rights
     subject: dc.subject
     type: dc.type
+  dlts:
+    available: ss_handle
+    creator: sm_author
+    data_provider:
+      string: "NYU"
+    date:
+      date:
+        format: "%B %Y"
+        value: ss_publication_date_text
+    description:
+      paste:
+        - sm_collection_label
+        - paste:
+          - string: " "
+          - sm_field_volume
+          default: ""
+        - string: ", ("
+        - field: ss_publication_date_text
+          default: ""
+        - string: ")"
+    identifier: ss_handle
+    language: sm_language_code
+    publisher: sm_publisher
+    series: sm_field_volume
+    subject: sm_subject_label
+    title: ss_title
 collections:
   # key is unique collection identifier
   vinopal:
@@ -60,3 +86,12 @@ collections:
       type:
         # fixed value
         string: "Report"
+  freedom:
+    source: DLTS
+    code: fdm
+    template: dlts
+    fields:
+      prefix:
+        string: "fdm"
+      type:
+        string: "Journal"

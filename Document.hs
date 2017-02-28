@@ -17,6 +17,7 @@ import           Data.Maybe (fromMaybe, mapMaybe)
 import           Data.Monoid ((<>))
 import qualified Data.Text as T
 import           Data.Time.Clock (UTCTime)
+import           Data.Time.Format (ParseTime(..), formatTime)
 import qualified Data.Vector as V
 
 newtype Value = Value{ values :: [T.Text] }
@@ -32,6 +33,21 @@ instance JSON.FromJSON Value where
 
 instance JSON.ToJSON Value where
   toJSON (Value l) = JSON.Array $ V.fromList $ map JSON.String l
+
+instance ParseTime Value where
+  buildTime _ [] = Just $ Value []
+  buildTime l x = (Value . return . T.pack . formatTime l fmt) <$> (buildTime l x :: Maybe UTCTime) where
+    fmt = chk "CfYGygs" ("%Y"
+      ++  chk "BbmVUWjs" ("-%m"
+      ++  chk "deuaAwjs" ("-%d"
+      ++  chk "HkIls" ("T%H"
+      ++  chk "Ms" (":%M"
+      ++  chk "Ss" ":%S%Q")
+      ++  chk "Zz" "Z"))))
+    c = map fst x
+    chk s f
+      | any (`elem` c) (s :: String) = f
+      | otherwise = ""
 
 maybeValue :: Value -> Maybe Value
 maybeValue (Value []) = Nothing
