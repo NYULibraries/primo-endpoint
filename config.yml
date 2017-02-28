@@ -1,5 +1,5 @@
 # default update interval
-interval: 86400
+interval: 432100
 fda:
   # maximum collections to index
   collections: 1000

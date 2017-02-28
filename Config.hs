@@ -25,6 +25,7 @@ import           Util
 import           Document
 import           Fields
 import           FDA
+import           DLTS
 
 type Interval = NominalDiffTime
 
@@ -48,6 +49,7 @@ loadIndices conf = Indices
 
 data Source
   = SourceFDA Int
+  | SourceDLTS T.Text
   deriving (Show)
 
 data Collection = Collection
@@ -69,6 +71,7 @@ data Config = Config
 parseSource :: Indices -> JSON.Object -> T.Text -> JSON.Parser Source
 parseSource idx o "FDA" = SourceFDA <$>
   (maybe (o JSON..: "id") (\h -> maybe (fail "Unknown FDA handle") return $ HM.lookup h (fdaIndex idx)) =<< o JSON..:? "hdl")
+parseSource _ o "DLTS" = SourceDLTS <$> o JSON..: "code"
 parseSource _ _ s = fail $ "Unknown collection source: " ++ show s
 
 -- |@parseCollection generators templates key value@
@@ -121,6 +124,7 @@ loadConfig force cache conf = do
 
 loadSource :: Source -> IO Documents
 loadSource (SourceFDA i) = loadFDA i
+loadSource (SourceDLTS c) = loadDLTS c
 
 loadCollection :: Collection -> IO Documents
 loadCollection Collection{..} =

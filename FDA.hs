@@ -86,5 +86,5 @@ loadFDA i = do
   j <- HTTP.getResponseBody <$> HTTP.httpJSON (
     HTTP.setQueryString [("expand",Just "metadata"),("limit",Just $ BSC.pack $ show $ fdaCollectionSize c)]
     $ addRequestPath req "items")
-  either fail return $ JSON.parseEither (parseFDA $ fdaCollectionName c) j
+  parseM (parseFDA $ fdaCollectionName c) j
   where req = addRequestPath fdaRequest (BSC.pack $ show i)

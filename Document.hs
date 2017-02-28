@@ -24,7 +24,10 @@ newtype Value = Value{ values :: [T.Text] }
 
 instance JSON.FromJSON Value where
   parseJSON (JSON.String t) = return $ Value [t]
-  parseJSON (JSON.Array a) = Value . concat <$> mapM JSON.parseJSON a
+  parseJSON (JSON.Number a) = return $ Value [T.pack $ show a]
+  parseJSON (JSON.Bool True) = return $ Value ["true"]
+  parseJSON (JSON.Bool False) = return $ Value ["false"]
+  parseJSON (JSON.Array a) = Value . concatMap values <$> mapM JSON.parseJSON a
   parseJSON v = JSON.typeMismatch "Value" v
 
 instance JSON.ToJSON Value where
