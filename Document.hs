@@ -1,3 +1,4 @@
+{-# LANGUAGE CPP #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-}
@@ -35,8 +36,13 @@ instance JSON.ToJSON Value where
   toJSON (Value l) = JSON.Array $ V.fromList $ map JSON.String l
 
 instance ParseTime Value where
+#if MIN_VERSION_time(1,6,0)
   buildTime _ [] = Just $ Value []
   buildTime l x = (Value . return . T.pack . formatTime l fmt) <$> (buildTime l x :: Maybe UTCTime) where
+#else
+  buildTime _ [] = Value []
+  buildTime l x = Value $ return $ T.pack $ formatTime l fmt (buildTime l x :: UTCTime) where
+#endif
     fmt = chk "CfYGygs" ("%Y"
       ++  chk "BbmVUWjs" ("-%m"
       ++  chk "deuaAwjs" ("-%d"
