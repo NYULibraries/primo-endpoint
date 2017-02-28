@@ -1,6 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE ViewPatterns #-}
-module FDA
+module Source.FDA
   ( loadFDAIndex
   , loadFDA
   ) where

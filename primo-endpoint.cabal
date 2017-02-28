@@ -26,9 +26,9 @@ executable primo-endpoint
     Fields
     Config
     Cache
-    Solr
-    FDA
-    DLTS
+    Source.Solr
+    Source.FDA
+    Source.DLTS
     Server
   default-language:    Haskell2010
   ghc-options: -Wall

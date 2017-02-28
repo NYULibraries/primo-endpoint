@@ -23,8 +23,8 @@ readBinaryFile f h = bracketOnError
   hClose
   h
 
-compareFiles :: FilePath -> FilePath -> IO Bool
-compareFiles f g = fromDoesNotExist False $ readBinaryFile f $ \h -> readBinaryFile g $ \i -> do
+_compareFiles :: FilePath -> FilePath -> IO Bool
+_compareFiles f g = fromDoesNotExist False $ readBinaryFile f $ \h -> readBinaryFile g $ \i -> do
   x <- hFileSize h
   y <- hFileSize i
   if x == y
@@ -40,7 +40,7 @@ updateFile f w = bracketOnError
   (\(tf, th) -> do
     w th
     hClose th
-    let r = False -- r <- compareFiles tf f -- FIXME need two dates
+    let r = False -- r <- _compareFiles tf f -- FIXME need two dates
     if r
       then False <$ removeFile tf
       else True  <$ renameFile tf f)

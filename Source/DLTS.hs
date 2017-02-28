@@ -1,5 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
-module DLTS
+module Source.DLTS
   ( loadDLTS
   ) where
 
@@ -12,7 +12,7 @@ import qualified Network.HTTP.Client as HTTP
 
 import           Util
 import           Document
-import           Solr
+import           Source.Solr
 
 dltsRequest :: HTTP.Request
 dltsRequest = HTTP.parseRequest_ "http://discovery.dlib.nyu.edu:8080/solr3_discovery/viewer/select"

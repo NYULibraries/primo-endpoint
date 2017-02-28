@@ -24,8 +24,8 @@ import           Text.Read (readMaybe)
 import           Util
 import           Document
 import           Fields
-import           FDA
-import           DLTS
+import           Source.FDA
+import           Source.DLTS
 
 type Interval = NominalDiffTime
 
