@@ -20,13 +20,13 @@ dltsRequest = HTTP.parseRequest_ "http://discovery.dlib.nyu.edu:8080/solr3_disco
 loadDLTS :: T.Text -> IO Documents
 loadDLTS c = parseM (mapM doc) =<< loadSolr dltsRequest ("sm_collection_code:" <> TE.encodeUtf8 c) where
   doc o = do
-    i <- o JSON..: "id"
+    hdl <- maybe (fail "invalid handle") return . T.stripPrefix "http://hdl.handle.net/2333.1/" =<< o JSON..: "ss_handle"
     cc <- one =<< o JSON..: "sm_collection_code"
     cl <- one =<< o JSON..: "sm_collection_label"
     m <- o JSON..: "ds_changed"
     o' <- mapM JSON.parseJSON o
     return Document
-      { documentID = cc <> ":" <> T.replace "/" "-" i
+      { documentID = cc <> ":hdl-handle-net-2333-1-" <> hdl
       , documentCollection = cl
       , documentModified = m
       , documentMetadata = o'
