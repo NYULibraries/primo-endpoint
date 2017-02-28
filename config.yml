@@ -58,6 +58,8 @@ templates:
     series: sm_field_volume
     subject: sm_subject_label
     title: ss_title
+    type:
+      string: "Journal"
 collections:
   # key is unique collection identifier
   vinopal:
@@ -90,8 +92,7 @@ collections:
     source: DLTS
     code: fdm
     template: dlts
-    fields:
-      prefix:
-        string: "fdm"
-      type:
-        string: "Journal"
+  theliberator:
+    source: DLTS
+    code: theliberator
+    template: dlts
