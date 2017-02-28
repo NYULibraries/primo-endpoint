@@ -1,6 +1,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Source.DLTS
-  ( loadDLTS
+  ( DLTSCore(..)
+  , loadDLTS
   ) where
 
 import qualified Data.Aeson.Types as JSON
@@ -8,23 +9,42 @@ import qualified Data.HashSet as HSet
 import           Data.Monoid ((<>))
 import qualified Data.Text as T
 import qualified Data.Text.Encoding as TE (encodeUtf8)
-import qualified Data.Vector as V
 import qualified Network.HTTP.Client as HTTP
 
 import           Util
 import           Document
 import           Source.Solr
 
-dltsRequest :: HTTP.Request
-dltsRequest = HTTP.parseRequest_ "http://discovery.dlib.nyu.edu:8080/solr3_discovery/viewer/select"
+data DLTSCore
+  = DLTSCore
+  | DLTSViewer
+  deriving (Eq, Enum, Bounded, Show)
 
-loadDLTS :: T.Text -> HSet.HashSet T.Text -> IO Documents
-loadDLTS c fl = parseM (mapM doc) =<< loadSolr dltsRequest ("sm_collection_code:" <> TE.encodeUtf8 c) (fl <> fl') where
-  fl' = HSet.fromList ["ss_handle", "sm_collection_code", "sm_collection_label", "ds_changed"]
+instance JSON.FromJSON DLTSCore where
+  parseJSON = JSON.withText "DLTS core" cn where
+    cn "core" = return DLTSCore
+    cn "viewer" = return DLTSViewer
+    cn _ = fail "Unknown DLTS core"
+
+dltsBase :: HTTP.Request
+dltsBase = HTTP.parseRequest_ "http://discovery.dlib.nyu.edu:8080/solr3_discovery"
+
+dltsRequest :: DLTSCore -> HTTP.Request
+dltsRequest DLTSCore = addRequestPath dltsBase "select"
+dltsRequest DLTSViewer = addRequestPath dltsBase "viewer/select"
+
+dltsCollectionFields :: DLTSCore -> (T.Text, T.Text)
+dltsCollectionFields DLTSCore = ("collection_code", "collection_title")
+dltsCollectionFields DLTSViewer = ("sm_collection_code", "sm_collection_label")
+
+loadDLTS :: DLTSCore -> T.Text -> HSet.HashSet T.Text -> IO Documents
+loadDLTS core c fl = parseM (mapM doc) =<< loadSolr (dltsRequest core) (TE.encodeUtf8 $ code <> T.cons ':' c) (fl <> fl') where
+  (code, label) = dltsCollectionFields core
+  fl' = HSet.fromList ["ss_handle", code, label, "ds_changed"]
   doc o = do
     hdl <- maybe (fail "invalid handle") return . T.stripPrefix "http://hdl.handle.net/2333.1/" =<< o JSON..: "ss_handle"
-    cc <- one =<< o JSON..: "sm_collection_code"
-    cl <- one =<< o JSON..: "sm_collection_label"
+    cc <- one =<< o JSON..: code
+    cl <- one =<< o JSON..: label
     m <- o JSON..: "ds_changed"
     o' <- mapM JSON.parseJSON o
     return Document
@@ -34,6 +54,5 @@ loadDLTS c fl = parseM (mapM doc) =<< loadSolr dltsRequest ("sm_collection_code:
       , documentMetadata = o'
       }
     where
-    one x
-      | V.length x == 1 = return $ V.head x
-      | otherwise = fail "multiple values"
+    one (Value [x]) = return x
+    one _ = fail "multiple values"

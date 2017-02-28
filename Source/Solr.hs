@@ -16,7 +16,7 @@ import qualified Network.HTTP.Simple as HTTP
 data SolrResponse = SolrResponse
   { solrStart, solrNumFound :: Int
   , solrDocs :: V.Vector JSON.Object
-  }
+  } deriving (Show)
 
 instance JSON.FromJSON SolrResponse where
   parseJSON = JSON.withObject "Solr response" $ \o -> do

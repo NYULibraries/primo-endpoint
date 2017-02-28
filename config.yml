@@ -32,7 +32,7 @@ templates:
     rights: dc.rights
     subject: dc.subject
     type: dc.type
-  dlts:
+  viewer:
     available: ss_handle
     creator: sm_author
     data_provider:
@@ -90,9 +90,11 @@ collections:
         string: "Report"
   freedom:
     source: DLTS
+    core: viewer
     code: fdm
-    template: dlts
+    template: viewer
   theliberator:
     source: DLTS
+    core: viewer
     code: theliberator
-    template: dlts
+    template: viewer

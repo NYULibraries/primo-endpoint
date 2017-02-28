@@ -49,7 +49,7 @@ loadIndices conf = Indices
 
 data Source
   = SourceFDA Int
-  | SourceDLTS T.Text
+  | SourceDLTS DLTSCore T.Text
   deriving (Show)
 
 data Collection = Collection
@@ -71,7 +71,7 @@ data Config = Config
 parseSource :: Indices -> JSON.Object -> T.Text -> JSON.Parser Source
 parseSource idx o "FDA" = SourceFDA <$>
   (maybe (o JSON..: "id") (\h -> maybe (fail "Unknown FDA handle") return $ HMap.lookup h (fdaIndex idx)) =<< o JSON..:? "hdl")
-parseSource _ o "DLTS" = SourceDLTS <$> o JSON..: "code"
+parseSource _ o "DLTS" = SourceDLTS <$> o JSON..: "core" <*> o JSON..: "code"
 parseSource _ _ s = fail $ "Unknown collection source: " ++ show s
 
 -- |@parseCollection generators templates key value@
@@ -126,5 +126,5 @@ loadCollection :: Collection -> IO Documents
 loadCollection Collection{..} =
   V.map (mapMetadata $ generateFields collectionFields) <$> loadSource collectionSource where
   loadSource (SourceFDA i) = loadFDA i
-  loadSource (SourceDLTS c) = loadDLTS c (generatorsFields collectionFields)
+  loadSource (SourceDLTS c i) = loadDLTS c i (generatorsFields collectionFields)
 
