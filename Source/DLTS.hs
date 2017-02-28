@@ -4,6 +4,7 @@ module Source.DLTS
   ) where
 
 import qualified Data.Aeson.Types as JSON
+import qualified Data.HashSet as HSet
 import           Data.Monoid ((<>))
 import qualified Data.Text as T
 import qualified Data.Text.Encoding as TE (encodeUtf8)
@@ -17,8 +18,9 @@ import           Source.Solr
 dltsRequest :: HTTP.Request
 dltsRequest = HTTP.parseRequest_ "http://discovery.dlib.nyu.edu:8080/solr3_discovery/viewer/select"
 
-loadDLTS :: T.Text -> IO Documents
-loadDLTS c = parseM (mapM doc) =<< loadSolr dltsRequest ("sm_collection_code:" <> TE.encodeUtf8 c) where
+loadDLTS :: T.Text -> HSet.HashSet T.Text -> IO Documents
+loadDLTS c fl = parseM (mapM doc) =<< loadSolr dltsRequest ("sm_collection_code:" <> TE.encodeUtf8 c) (fl <> fl') where
+  fl' = HSet.fromList ["ss_handle", "sm_collection_code", "sm_collection_label", "ds_changed"]
   doc o = do
     hdl <- maybe (fail "invalid handle") return . T.stripPrefix "http://hdl.handle.net/2333.1/" =<< o JSON..: "ss_handle"
     cc <- one =<< o JSON..: "sm_collection_code"

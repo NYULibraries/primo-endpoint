@@ -11,7 +11,7 @@ module Config
 import           Control.Monad (guard, liftM2)
 import           Control.Monad.Trans.Maybe (MaybeT(..))
 import qualified Data.Aeson.Types as JSON
-import qualified Data.HashMap.Strict as HM
+import qualified Data.HashMap.Strict as HMap
 import           Data.Maybe (fromMaybe)
 import           Data.Monoid ((<>))
 import qualified Data.Text as T
@@ -40,7 +40,7 @@ instance JSON.FromJSON PreConfig where
     <*> (o JSON..: "fda" >>= (JSON..: "collections"))
 
 data Indices = Indices
-  { fdaIndex :: HM.HashMap Int Int
+  { fdaIndex :: HMap.HashMap Int Int
   } deriving (Show, Read)
 
 loadIndices :: PreConfig -> IO Indices
@@ -60,7 +60,7 @@ data Collection = Collection
   , collectionFields :: Generators
   }
 
-type Collections = HM.HashMap T.Text Collection
+type Collections = HMap.HashMap T.Text Collection
 
 data Config = Config
   { configCollections :: Collections
@@ -70,12 +70,12 @@ data Config = Config
 -- |@parseSource collection source_type@
 parseSource :: Indices -> JSON.Object -> T.Text -> JSON.Parser Source
 parseSource idx o "FDA" = SourceFDA <$>
-  (maybe (o JSON..: "id") (\h -> maybe (fail "Unknown FDA handle") return $ HM.lookup h (fdaIndex idx)) =<< o JSON..:? "hdl")
+  (maybe (o JSON..: "id") (\h -> maybe (fail "Unknown FDA handle") return $ HMap.lookup h (fdaIndex idx)) =<< o JSON..:? "hdl")
 parseSource _ o "DLTS" = SourceDLTS <$> o JSON..: "code"
 parseSource _ _ s = fail $ "Unknown collection source: " ++ show s
 
 -- |@parseCollection generators templates key value@
-parseCollection :: PreConfig -> Indices -> FilePath -> Generators -> HM.HashMap T.Text Generators -> T.Text -> JSON.Value -> JSON.Parser Collection
+parseCollection :: PreConfig -> Indices -> FilePath -> Generators -> HMap.HashMap T.Text Generators -> T.Text -> JSON.Value -> JSON.Parser Collection
 parseCollection pc idx cache gen tpl key = JSON.withObject "collection" $ \o -> do
   s <- parseSource idx o =<< o JSON..: "source"
   i <- o JSON..:? "interval"
@@ -91,13 +91,13 @@ parseCollection pc idx cache gen tpl key = JSON.withObject "collection" $ \o -> 
     }
   where
   getTemplate = JSON.withText "template name" $ \s ->
-    maybe (fail $ "Undefined template: " ++ show s) return $ HM.lookup s tpl
+    maybe (fail $ "Undefined template: " ++ show s) return $ HMap.lookup s tpl
 
 parseConfig :: PreConfig -> Indices -> FilePath -> JSON.Value -> JSON.Parser Config
 parseConfig pc idx cache = JSON.withObject "config" $ \o -> do
   g <- o JSON..:? "generators" JSON..!= mempty
   t <- withObjectOrNull "templates" (mapM $ parseGenerators g) =<< o JSON..:? "templates" JSON..!= JSON.Null
-  c <- JSON.withObject "collections" (HM.traverseWithKey $ parseCollection pc idx cache g t)
+  c <- JSON.withObject "collections" (HMap.traverseWithKey $ parseCollection pc idx cache g t)
     =<< o JSON..: "collections"
   return Config
     { configCollections = c
@@ -122,10 +122,9 @@ loadConfig force cache conf = do
   idx <- updateIndices force pc (cache </> "index")
   parseM (parseConfig pc idx cache) jc
 
-loadSource :: Source -> IO Documents
-loadSource (SourceFDA i) = loadFDA i
-loadSource (SourceDLTS c) = loadDLTS c
-
 loadCollection :: Collection -> IO Documents
 loadCollection Collection{..} =
-  V.map (mapMetadata $ generateFields collectionFields) <$> loadSource collectionSource
+  V.map (mapMetadata $ generateFields collectionFields) <$> loadSource collectionSource where
+  loadSource (SourceFDA i) = loadFDA i
+  loadSource (SourceDLTS c) = loadDLTS c (generatorsFields collectionFields)
+

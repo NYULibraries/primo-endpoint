@@ -4,12 +4,15 @@
 module Fields
   ( Generators
   , generateFields
+  , generatorsFields
   , parseGenerators
   ) where
 
 import qualified Data.Aeson.Types as JSON
 import           Data.Char (isAlpha)
-import qualified Data.HashMap.Strict as HM
+import qualified Data.HashMap.Lazy as HMapL
+import qualified Data.HashMap.Strict as HMap
+import qualified Data.HashSet as HSet
 import           Data.Maybe (fromMaybe)
 import           Data.Monoid ((<>))
 import qualified Data.Text as T
@@ -33,7 +36,7 @@ data Generator
     , _generatorOr :: Generator -- if generator is empty
     }
   | GeneratorWith
-    { _generatorWith :: HM.HashMap T.Text Generator -- local variables
+    { _generatorWith :: HMap.HashMap T.Text Generator -- local variables
     , _generator :: Generator
     }
 
@@ -46,7 +49,7 @@ instance Monoid Generator where
 generate :: Metadata -> Generator -> Value
 generate _ (GeneratorString x) = Value [x]
 generate m (GeneratorList l) = foldMap (generate m) l
-generate m (GeneratorField f) = HM.lookupDefault mempty f m
+generate m (GeneratorField f) = HMap.lookupDefault mempty f m
 generate m (GeneratorMap f g) = foldMap f $ values $ generate m g
 generate m (GeneratorOr g d) = generate m g `valueOr` generate m d
 generate _ (GeneratorPaste []) = Value [T.empty]
@@ -56,12 +59,24 @@ generate m (GeneratorPaste (g:l)) = Value
   | x <- values $ generate m g
   , y <- values $ generate m (GeneratorPaste l)
   ]
-generate m (GeneratorWith gm g) = generate (HM.map (generate m) gm) g
+generate m (GeneratorWith gm g) = generate (HMap.map (generate m) gm) g
 
-type Generators = HM.HashMap T.Text Generator
+generatorFields :: Generator -> HSet.HashSet T.Text
+generatorFields (GeneratorString _) = HSet.empty
+generatorFields (GeneratorList l) = foldMap generatorFields l
+generatorFields (GeneratorField f) = HSet.singleton f
+generatorFields (GeneratorMap _ g) = generatorFields g
+generatorFields (GeneratorOr g d) = generatorFields g <> generatorFields d
+generatorFields (GeneratorPaste l) = foldMap generatorFields l
+generatorFields (GeneratorWith gm g) = foldMap generatorFields gm <> (generatorFields g `HSet.difference` HSet.fromMap (HMapL.map (const ()) gm))
+
+type Generators = HMap.HashMap T.Text Generator
 
 generateFields :: Generators -> Metadata -> Metadata
-generateFields g m = HM.map (generate m) g
+generateFields g m = HMap.map (generate m) g
+
+generatorsFields :: Generators -> HSet.HashSet T.Text
+generatorsFields = foldMap generatorFields
 
 parseGeneratorKey :: Generators -> T.Text -> JSON.Value -> JSON.Parser Generator
 parseGeneratorKey _ "field" v =
@@ -78,9 +93,9 @@ parseGeneratorKey g "date" v =
       (fromMaybe mempty . parseTimeM True defaultTimeLocale fmt . T.unpack)
       val)
     v
-parseGeneratorKey g k JSON.Null | Just m <- HM.lookup k g = return m
-parseGeneratorKey g k v | Just m <- HM.lookup k g =
-  JSON.withObject "generator arguments" (fmap (`GeneratorWith` m) . mapM (parseGenerator $ HM.delete k g)) v
+parseGeneratorKey g k JSON.Null | Just m <- HMap.lookup k g = return m
+parseGeneratorKey g k v | Just m <- HMap.lookup k g =
+  JSON.withObject "generator arguments" (fmap (`GeneratorWith` m) . mapM (parseGenerator $ HMap.delete k g)) v
 parseGeneratorKey _ k _ = fail $ "Unknown field generator: " ++ show k
 
 parseGenerator :: Generators -> JSON.Value -> JSON.Parser Generator
@@ -91,8 +106,8 @@ parseGenerator _ (JSON.String s) = return $ GeneratorString s
 parseGenerator _ JSON.Null = return $ mempty
 parseGenerator g (JSON.Array l) = GeneratorList <$> mapM (parseGenerator g) (V.toList l)
 parseGenerator g (JSON.Object o) = do
-  maybe return (\d x -> GeneratorOr x <$> parseGenerator g d) (HM.lookup "default" o)
-    =<< foldMapM (uncurry $ parseGeneratorKey g) (HM.toList $ HM.delete "default" o)
+  maybe return (\d x -> GeneratorOr x <$> parseGenerator g d) (HMap.lookup "default" o)
+    =<< foldMapM (uncurry $ parseGeneratorKey g) (HMap.toList $ HMap.delete "default" o)
 parseGenerator _ v = JSON.typeMismatch "field generator" v
 
 instance JSON.FromJSON Generator where
