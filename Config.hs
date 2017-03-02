@@ -17,6 +17,7 @@ import           Data.Foldable (fold)
 import           Data.Maybe (fromMaybe)
 import           Data.Monoid ((<>))
 import qualified Data.Text as T
+import qualified Data.Text.Encoding as TE (encodeUtf8)
 import           Data.Time.Clock (NominalDiffTime, getCurrentTime, diffUTCTime)
 import qualified Data.Vector as V
 import qualified Data.Yaml as YAML
@@ -29,7 +30,6 @@ import           Fields
 import           Source.FDA
 import           Source.DLTS
 import           Source.DLib
-import           Source.Rosie
 
 type Interval = NominalDiffTime
 
@@ -55,7 +55,6 @@ data Source
   = SourceFDA Int
   | SourceDLTS DLTSCore T.Text
   | SourceDLib BS.ByteString
-  | SourceRosie
   deriving (Show)
 
 data Collection = Collection
@@ -79,7 +78,7 @@ parseSource :: Indices -> JSON.Object -> T.Text -> JSON.Parser Source
 parseSource idx o "FDA" = SourceFDA <$>
   (maybe (o JSON..: "id") (\h -> maybe (fail "Unknown FDA handle") return $ HMap.lookup h (fdaIndex idx)) =<< o JSON..:? "hdl")
 parseSource _ o "DLTS" = SourceDLTS <$> o JSON..: "core" <*> o JSON..: "code"
-parseSource _ _ "rosie" = return SourceRosie
+parseSource _ o "DLib" = SourceDLib . TE.encodeUtf8 <$> o JSON..: "path"
 parseSource _ _ s = fail $ "Unknown collection source: " ++ show s
 
 -- |@parseCollection generators templates key value@
@@ -137,5 +136,4 @@ loadCollection Collection{..} =
   loadSource (SourceFDA i) = loadFDA i
   loadSource (SourceDLTS c i) = loadDLTS c i fl
   loadSource (SourceDLib p) = loadDLib collectionKey (fold collectionName) p
-  loadSource SourceRosie = loadRosie fl
   fl = generatorsFields collectionFields

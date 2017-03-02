@@ -99,12 +99,14 @@ collections:
     code: theliberator
     template: viewer
   rosie:
-    source: rosie
+    source: DLib
+    path: "rosie/content.json"
+    name: "The Real Rosie the Riveter Project"
     fields:
       identifier: identifier
       title: entity_title
-      available: ss_handle
-      citation: ss_handle
+      available: handle
+      citation: handle
       description: description
       type:
         string: "Video"
