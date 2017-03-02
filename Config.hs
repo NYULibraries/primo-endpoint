@@ -134,6 +134,6 @@ loadCollection :: Collection -> IO Documents
 loadCollection Collection{..} =
   V.map (mapMetadata $ generateFields collectionFields) <$> loadSource collectionSource where
   loadSource (SourceFDA i) = loadFDA i
-  loadSource (SourceDLTS c i) = loadDLTS c i fl
+  loadSource (SourceDLTS c i) = loadDLTS collectionKey collectionName c i fl
   loadSource (SourceDLib p) = loadDLib collectionKey (fold collectionName) p
   fl = generatorsFields collectionFields

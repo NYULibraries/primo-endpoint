@@ -98,7 +98,7 @@ collections:
       type:
         # fixed value
         string: "Report"
-  freedom:
+  fdm:
     source: DLTS
     core: viewer
     code: fdm
@@ -108,6 +108,25 @@ collections:
     core: viewer
     code: theliberator
     template: viewer
+  nyupress:
+    source: DLTS
+    core: nyupress
+    code: oa-books
+    name: "NYU Press Open Access Books"
+    fields:
+      identifier: id
+      isbn: id
+      title: title
+      creator: author
+      available: handle
+      citation: handle
+      date: date
+      description: description
+      type:
+        string: "Book"
+      language: language
+      format:
+        string: "Book"
   rosie:
     source: DLib
     path: "rosie/content.json"
