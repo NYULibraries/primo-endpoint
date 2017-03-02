@@ -105,6 +105,7 @@ collections:
       title: entity_title
       available: ss_handle
       citation: ss_handle
+      description: description
       type:
         string: "Video"
       format:
