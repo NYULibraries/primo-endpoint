@@ -2,6 +2,7 @@
 {-# LANGUAGE ViewPatterns #-}
 module Source.Solr
   ( loadSolr
+  , loadDrupal
   ) where
 
 import qualified Data.Aeson.Types as JSON
@@ -57,3 +58,7 @@ loadSolr req fq fl = loop 0 100 where
     let s' = s + length d
     (d <>) <$> loop s' (n-s')
   fl' = BSC.intercalate "," $ map TE.encodeUtf8 $ HSet.toList fl
+
+-- Drupal acts like solr, some fields are just unused
+loadDrupal :: HTTP.Request -> IO (V.Vector JSON.Object)
+loadDrupal req = loadSolr req BSC.empty HSet.empty

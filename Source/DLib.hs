@@ -13,7 +13,7 @@ import qualified Network.HTTP.Client as HTTP
 import           Util
 import           Document
 import           Source.Solr
-import           Source.DLTS
+import           Source.DLTS (dltsHandleID)
 
 dlibRequest :: HTTP.Request
 dlibRequest = HTTP.parseRequest_ "http://dlib.nyu.edu"
@@ -23,9 +23,10 @@ parseDLib pfx name o = do
   let t = parseValue <$> HMap.delete "metadata" o
   m <- mapM pm =<< o JSON..: "metadata"
   let tm = t <> m
-  hdl <- dltsHandleID $ getMetadata tm "handle"
+  _hdl <- dltsHandleID $ getMetadata tm "handle"
+  i <- o JSON..: "identifier"
   return Document
-    { documentID = pfx <> T.cons ':' hdl
+    { documentID = pfx <> T.cons ':' i -- _hdl
     , documentCollection = name
     , documentMetadata = tm
     }
@@ -35,7 +36,6 @@ parseDLib pfx name o = do
   pv v = parseValue v
 
 loadDLib :: T.Text -> T.Text -> BS.ByteString -> IO Documents
-loadDLib pfx name path = do
-  -- actually drupal, but acts like solr
-  j <- loadSolr (addRequestPath dlibRequest path) "" mempty
-  parseM (mapM $ parseDLib pfx name) j
+loadDLib pfx name path =
+  parseM (mapM $ parseDLib pfx name)
+    =<< loadDrupal (addRequestPath dlibRequest path)

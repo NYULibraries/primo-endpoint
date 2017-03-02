@@ -48,8 +48,8 @@ instance JSON.FromJSON FDACollection where
     <*> o JSON..: "name"
     <*> o JSON..: "numberItems"
 
-guessLocalTime :: LocalTime -> UTCTime
-guessLocalTime l = unsafePerformIO $ do
+_guessLocalTime :: LocalTime -> UTCTime
+_guessLocalTime l = unsafePerformIO $ do
   z <- getTimeZone $ localTimeToUTC utc l
   z' <- getTimeZone $ localTimeToUTC z l
   return $ localTimeToUTC z' l
@@ -62,7 +62,7 @@ parseFDA name = withArrayOrSingleton $ mapM $ JSON.withObject "FDA item" $ \obj 
   return Document
     { documentID = "fda:hdl-handle-net-" <> (T.pack $ show hdl0) <> "-" <> (T.pack $ show hdl1)
     , documentCollection = name
-    -- , documentModified = guessLocalTime mtime
+    -- , documentModified = _guessLocalTime mtime
     , documentMetadata = metadata
     }
   where

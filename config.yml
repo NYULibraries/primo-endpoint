@@ -60,6 +60,16 @@ templates:
     title: ss_title
     type:
       string: "Journal"
+  dlib:
+    identifier: identifier
+    title: entity_title
+    available: handle
+    citation: handle
+    date: publication_date
+    description: description
+    subject: subject
+    creator: editor
+    language: language
 collections:
   # key is unique collection identifier
   vinopal:
@@ -102,13 +112,25 @@ collections:
     source: DLib
     path: "rosie/content.json"
     name: "The Real Rosie the Riveter Project"
+    template: dlib
     fields:
-      identifier: identifier
-      title: entity_title
-      available: handle
-      citation: handle
-      description: description
       type:
         string: "Video"
       format:
         string: "Video"
+  masses:
+    source: DLib
+    path: "themasses/books.json"
+    name: "The Masses"
+    template: dlib
+    fields:
+      title:
+        paste:
+          - entity_title
+          - string: ' '
+          - field: description
+            default: ''
+      type:
+        string: "Book"
+      format:
+        string: "Book"
