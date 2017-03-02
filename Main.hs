@@ -26,11 +26,13 @@ import           System.FilePath ((</>))
 import           System.IO (hPutStrLn, stderr)
 
 import           Config
+import           Auth
 import           Cache
 import           Server
 
 data Opts = Opts
   { optConfig :: FilePath
+  , optAuth :: FilePath
   , optCache :: Maybe FilePath
   , optForce :: Bool
   , optOutput :: Maybe String
@@ -40,6 +42,7 @@ data Opts = Opts
 defOpts :: Opts
 defOpts = Opts
   { optConfig = "config.yml"
+  , optAuth = "auth.yml"
   , optCache = Nothing
   , optForce = False
   , optOutput = Nothing
@@ -50,6 +53,8 @@ opts :: [Opt.OptDescr (Opts -> Opts)]
 opts =
   [ Opt.Option "c" ["config"] (Opt.ReqArg (\f o -> o{ optConfig = f }) "FILE")
     ("Load configuration from FILE [" ++ optConfig defOpts ++ "]")
+  , Opt.Option "a" ["auth"] (Opt.ReqArg (\f o -> o{ optAuth = f }) "FILE")
+    ("Load auth rules from FILE [" ++ optAuth defOpts ++ "]")
   , Opt.Option "C" ["cache"] (Opt.ReqArg (\f o -> o{ optCache = Just f }) "DIR")
     "Use DIR for cache files [$XDR_CACHE_DIR/primo-endpoint]"
   , Opt.Option "f" ["force"] (Opt.NoArg (\o -> o{ optForce = True }))
@@ -75,7 +80,8 @@ main = do
       hPutStrLn stderr $ Opt.usageInfo ("Usage: " ++ prog ++ " [OPTION...]") opts
       exitFailure
   
-  HTTPS.setGlobalManager =<< HTTP.newManager (HTTPS.mkManagerSettings (TLSSettingsSimple True False False) Nothing)
+  auth <- loadAuth optAuth
+  HTTPS.setGlobalManager =<< HTTP.newManager (applyAuth auth $ HTTPS.mkManagerSettings (TLSSettingsSimple True False False) Nothing)
 
   cache <- maybe 
 #if MIN_VERSION_directory(1,2,3)

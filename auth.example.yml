@@ -1,0 +1,11 @@
+# You should rename this to auth.yml and fill in the right values
+www.somehost.nyu.edu:
+  # credentials for http authentication
+  user: username
+  pass: password
+  # other headers to include in any http requests
+  headers:
+    X-Auth-Token: secret
+dev-dl-pa.home.nyu.edu:
+  user:
+  pass:

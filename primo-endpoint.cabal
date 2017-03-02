@@ -22,6 +22,7 @@ executable primo-endpoint
   hs-source-dirs:      .
   other-modules:
     Util
+    Auth
     Document
     Fields
     Config
@@ -39,12 +40,13 @@ executable primo-endpoint
     filepath,
     time,
     transformers,
+    case-insensitive,
     text,
     unordered-containers,
     vector,
     aeson,
-    network-uri,
     connection,
+    network-uri,
     http-client >= 0.5,
     http-client-tls,
     http-conduit >= 2.2,
