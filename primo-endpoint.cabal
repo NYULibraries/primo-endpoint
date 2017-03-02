@@ -23,6 +23,7 @@ executable primo-endpoint
   other-modules:
     Util
     Auth
+    ISO639
     Document
     Fields
     Config

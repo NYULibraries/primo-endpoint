@@ -6,6 +6,7 @@ module Fields
   , generateFields
   , generatorsFields
   , parseGenerators
+  , languageGenerator
   ) where
 
 import qualified Data.Aeson.Types as JSON
@@ -20,6 +21,7 @@ import           Data.Time.Format (parseTimeM, defaultTimeLocale)
 import qualified Data.Vector as V
 
 import           Util
+import           ISO639
 import           Document
 
 data Generator
@@ -47,12 +49,12 @@ instance Monoid Generator where
   mappend a b = GeneratorList [a] <> GeneratorList [b]
 
 generate :: Metadata -> Generator -> Value
-generate _ (GeneratorString x) = Value [x]
+generate _ (GeneratorString x) = value x
 generate m (GeneratorList l) = foldMap (generate m) l
 generate m (GeneratorField f) = HMap.lookupDefault mempty f m
 generate m (GeneratorMap f g) = foldMap f $ values $ generate m g
 generate m (GeneratorOr g d) = generate m g `valueOr` generate m d
-generate _ (GeneratorPaste []) = Value [T.empty]
+generate _ (GeneratorPaste []) = value T.empty
 generate m (GeneratorPaste [x]) = generate m x
 generate m (GeneratorPaste (g:l)) = Value
   [ x <> y
@@ -61,6 +63,7 @@ generate m (GeneratorPaste (g:l)) = Value
   ]
 generate m (GeneratorWith gm g) = generate (HMap.map (generate m) gm) g
 
+-- |Collect the set of input fields consumed by a generator
 generatorFields :: Generator -> HSet.HashSet T.Text
 generatorFields (GeneratorString _) = HSet.empty
 generatorFields (GeneratorList l) = foldMap generatorFields l
@@ -70,11 +73,16 @@ generatorFields (GeneratorOr g d) = generatorFields g <> generatorFields d
 generatorFields (GeneratorPaste l) = foldMap generatorFields l
 generatorFields (GeneratorWith gm g) = foldMap generatorFields gm <> (generatorFields g `HSet.difference` HSet.fromMap (HMapL.map (const ()) gm))
 
+-- |Translate language codes according to ISO639, if possible
+languageGenerator :: ISO639 -> Generator -> Generator
+languageGenerator iso = GeneratorMap $ \l -> value $ fromMaybe l $ lookupISO639 iso l
+
 type Generators = HMap.HashMap T.Text Generator
 
 generateFields :: Generators -> Metadata -> Metadata
 generateFields g m = HMap.map (generate m) g
 
+-- |Collect the set of input fields consumed by generators
 generatorsFields :: Generators -> HSet.HashSet T.Text
 generatorsFields = foldMap generatorFields
 
