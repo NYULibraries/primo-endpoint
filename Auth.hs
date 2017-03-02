@@ -17,6 +17,7 @@ import qualified Data.Text.Encoding as TE
 import qualified Data.Yaml as YAML
 import qualified Network.HTTP.Client as HTTP
 import           Network.HTTP.Types.Header (RequestHeaders)
+import           System.Directory (doesFileExist)
 
 import           Util
 
@@ -43,9 +44,11 @@ instance JSON.FromJSON Auth where
 type AuthSettings = HMap.HashMap BS.ByteString Auth
 
 loadAuth :: FilePath -> IO AuthSettings
-loadAuth f = fromDoesNotExist HMap.empty $ do
-  Just jc <- YAML.decodeFile f
-  HMap.fromList . map (first tBS) . HMap.toList <$> parseJSONM jc
+loadAuth f = do
+  e <- doesFileExist f
+  if e
+    then HMap.fromList . map (first tBS) . HMap.toList <$> (parseJSONM . fromMaybe JSON.emptyObject =<< YAML.decodeFile f)
+    else return HMap.empty
 
 applyAuth :: AuthSettings -> HTTP.ManagerSettings -> HTTP.ManagerSettings
 applyAuth auths hm = hm

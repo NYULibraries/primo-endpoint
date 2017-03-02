@@ -120,7 +120,7 @@ updateIndices force pc f = maybe (do
 
 loadConfig :: Bool -> FilePath -> FilePath -> IO Config
 loadConfig force cache conf = do
-  Just jc <- YAML.decodeFile conf
+  jc <- fromMaybe JSON.Null <$> YAML.decodeFile conf
   pc <- parseJSONM jc
   idx <- updateIndices force pc (cache </> "index")
   parseM (parseConfig pc idx cache) jc
