@@ -30,6 +30,7 @@ executable primo-endpoint
     Source.Solr
     Source.FDA
     Source.DLTS
+    Source.Rosie
     Server
   default-language:    Haskell2010
   ghc-options: -Wall

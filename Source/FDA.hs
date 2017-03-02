@@ -78,12 +78,12 @@ fdaRequest = HTTP.addRequestHeader HTTP.hAccept "application/json"
 loadFDAIndex :: Int -> IO (HM.HashMap Int Int)
 loadFDAIndex z =
   V.foldl' (\m c -> HM.insert (fdaHandleSuffix $ fdaCollectionHandle c) (fdaCollectionId c) m) HM.empty
-    . HTTP.getResponseBody <$> HTTP.httpJSON (HTTP.setQueryString [("limit",Just $ BSC.pack $ show z)] fdaRequest)
+    . HTTP.responseBody <$> HTTP.httpJSON (HTTP.setQueryString [("limit",Just $ BSC.pack $ show z)] fdaRequest)
 
 loadFDA :: Int -> IO Documents
 loadFDA i = do
-  c <- HTTP.getResponseBody <$> HTTP.httpJSON req
-  j <- HTTP.getResponseBody <$> HTTP.httpJSON (
+  c <- HTTP.responseBody <$> HTTP.httpJSON req
+  j <- HTTP.responseBody <$> HTTP.httpJSON (
     HTTP.setQueryString [("expand",Just "metadata"),("limit",Just $ BSC.pack $ show $ fdaCollectionSize c)]
     $ addRequestPath req "items")
   parseM (parseFDA $ fdaCollectionName c) j

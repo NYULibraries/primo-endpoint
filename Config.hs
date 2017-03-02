@@ -26,6 +26,7 @@ import           Document
 import           Fields
 import           Source.FDA
 import           Source.DLTS
+import           Source.Rosie
 
 type Interval = NominalDiffTime
 
@@ -50,6 +51,7 @@ loadIndices conf = Indices
 data Source
   = SourceFDA Int
   | SourceDLTS DLTSCore T.Text
+  | SourceRosie
   deriving (Show)
 
 data Collection = Collection
@@ -72,6 +74,7 @@ parseSource :: Indices -> JSON.Object -> T.Text -> JSON.Parser Source
 parseSource idx o "FDA" = SourceFDA <$>
   (maybe (o JSON..: "id") (\h -> maybe (fail "Unknown FDA handle") return $ HMap.lookup h (fdaIndex idx)) =<< o JSON..:? "hdl")
 parseSource _ o "DLTS" = SourceDLTS <$> o JSON..: "core" <*> o JSON..: "code"
+parseSource _ _ "rosie" = return SourceRosie
 parseSource _ _ s = fail $ "Unknown collection source: " ++ show s
 
 -- |@parseCollection generators templates key value@
@@ -126,5 +129,6 @@ loadCollection :: Collection -> IO Documents
 loadCollection Collection{..} =
   V.map (mapMetadata $ generateFields collectionFields) <$> loadSource collectionSource where
   loadSource (SourceFDA i) = loadFDA i
-  loadSource (SourceDLTS c i) = loadDLTS c i (generatorsFields collectionFields)
-
+  loadSource (SourceDLTS c i) = loadDLTS c i fl
+  loadSource SourceRosie = loadRosie fl
+  fl = generatorsFields collectionFields

@@ -1,14 +1,16 @@
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE ViewPatterns #-}
 module Source.Solr
   ( loadSolr
   ) where
 
-import qualified Data.Aeson as JSON
+import qualified Data.Aeson.Types as JSON
 import qualified Data.ByteString.Char8 as BSC
 import qualified Data.HashSet as HSet
 import           Data.Monoid ((<>))
 import qualified Data.Text as T
 import qualified Data.Text.Encoding as TE (encodeUtf8)
+import qualified Data.Text.Read as TR (decimal)
 import qualified Data.Vector as V
 import qualified Network.HTTP.Client as HTTP
 import qualified Network.HTTP.Simple as HTTP
@@ -18,11 +20,15 @@ data SolrResponse = SolrResponse
   , solrDocs :: V.Vector JSON.Object
   } deriving (Show)
 
+parseInt :: JSON.Value -> JSON.Parser Int
+parseInt (JSON.String (TR.decimal -> Right (n, ""))) = return n -- weird thing on dev-dl-pa has a string here
+parseInt v = JSON.parseJSON v
+
 instance JSON.FromJSON SolrResponse where
   parseJSON = JSON.withObject "Solr response" $ \o -> do
     r <- o JSON..: "response"
-    s <- r JSON..: "start"
-    n <- r JSON..: "numFound"
+    s <- parseInt =<< r JSON..: "start"
+    n <- parseInt =<< r JSON..: "numFound"
     d <- r JSON..: "docs" 
     return SolrResponse
       { solrStart = s
@@ -32,7 +38,7 @@ instance JSON.FromJSON SolrResponse where
 
 loadSolrOffset :: HTTP.Request -> BSC.ByteString -> BSC.ByteString -> Int -> Int -> IO SolrResponse
 loadSolrOffset req fq fl start rows =
-  HTTP.getResponseBody <$> HTTP.httpJSON
+  HTTP.responseBody <$> HTTP.httpJSON
     (HTTP.setQueryString
       [ ("wt", Just "json")
       , ("hl", Just "off")

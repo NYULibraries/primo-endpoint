@@ -98,3 +98,14 @@ collections:
     core: viewer
     code: theliberator
     template: viewer
+  rosie:
+    source: rosie
+    fields:
+      identifier: identifier
+      title: entity_title
+      available: ss_handle
+      citation: ss_handle
+      type:
+        string: "Video"
+      format:
+        string: "Video"
