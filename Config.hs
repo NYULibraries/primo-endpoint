@@ -11,7 +11,9 @@ module Config
 import           Control.Monad (guard, liftM2)
 import           Control.Monad.Trans.Maybe (MaybeT(..))
 import qualified Data.Aeson.Types as JSON
+import qualified Data.ByteString as BS
 import qualified Data.HashMap.Strict as HMap
+import           Data.Foldable (fold)
 import           Data.Maybe (fromMaybe)
 import           Data.Monoid ((<>))
 import qualified Data.Text as T
@@ -26,6 +28,7 @@ import           Document
 import           Fields
 import           Source.FDA
 import           Source.DLTS
+import           Source.DLib
 import           Source.Rosie
 
 type Interval = NominalDiffTime
@@ -51,11 +54,13 @@ loadIndices conf = Indices
 data Source
   = SourceFDA Int
   | SourceDLTS DLTSCore T.Text
+  | SourceDLib BS.ByteString
   | SourceRosie
   deriving (Show)
 
 data Collection = Collection
-  { collectionSource :: Source
+  { collectionKey :: T.Text
+  , collectionSource :: Source
   , collectionCache :: FilePath
   , collectionInterval :: Interval
   , collectionName :: Maybe T.Text
@@ -86,7 +91,8 @@ parseCollection pc idx cache gen tpl key = JSON.withObject "collection" $ \o -> 
   f <- parseGenerators gen =<< o JSON..:? "fields" JSON..!= JSON.Null
   t <- withArrayOrNullOrSingleton (foldMapM getTemplate) =<< o JSON..:? "template" JSON..!= JSON.Null
   return Collection
-    { collectionCache = cache </> T.unpack key <.> "json"
+    { collectionKey = key
+    , collectionCache = cache </> T.unpack key <.> "json"
     , collectionSource = s
     , collectionInterval = fromMaybe (configInterval pc) i
     , collectionName = n
@@ -130,5 +136,6 @@ loadCollection Collection{..} =
   V.map (mapMetadata $ generateFields collectionFields) <$> loadSource collectionSource where
   loadSource (SourceFDA i) = loadFDA i
   loadSource (SourceDLTS c i) = loadDLTS c i fl
+  loadSource (SourceDLib p) = loadDLib collectionKey (fold collectionName) p
   loadSource SourceRosie = loadRosie fl
   fl = generatorsFields collectionFields

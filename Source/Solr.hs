@@ -21,7 +21,7 @@ data SolrResponse = SolrResponse
   } deriving (Show)
 
 parseInt :: JSON.Value -> JSON.Parser Int
-parseInt (JSON.String (TR.decimal -> Right (n, ""))) = return n -- weird thing on dev-dl-pa has a string here
+parseInt (JSON.String (TR.decimal -> Right (n, ""))) = return n -- drupal can have a string here
 parseInt v = JSON.parseJSON v
 
 instance JSON.FromJSON SolrResponse where

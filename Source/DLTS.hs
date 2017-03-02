@@ -1,7 +1,9 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-}
+{-# LANGUAGE ViewPatterns #-}
 module Source.DLTS
-  ( DLTSCore(..)
+  ( dltsHandleID
+  , DLTSCore(..)
   , loadDLTS
   ) where
 
@@ -15,6 +17,10 @@ import qualified Network.HTTP.Client as HTTP
 import           Util
 import           Document
 import           Source.Solr
+
+dltsHandleID :: Monad m => Value -> m T.Text
+dltsHandleID (Value [T.stripPrefix "http://hdl.handle.net/2333.1/" -> Just h]) = return $ "hdl-handle-net-2333-1-" <> h
+dltsHandleID v = fail $ "invalid handle: " ++ show v
 
 data DLTSCore
   = DLTSCore
@@ -31,7 +37,6 @@ instance JSON.FromJSON DLTSCore where
 
 dltsBase :: HTTP.Request
 dltsBase = HTTP.parseRequest_ "http://discovery.dlib.nyu.edu:8080/solr3_discovery"
-
 
 data DLTSCoreMeta = DLTSCoreMeta
   { dltsRequest :: !HTTP.Request
@@ -51,17 +56,14 @@ loadDLTS core c fl = parseM (mapM doc) =<< loadSolr dltsRequest (TE.encodeUtf8 $
   DLTSCoreMeta{..} = dltsCoreMeta core
   fl' = HSet.fromList [dltsCollectionCode, dltsCollectionName, dltsHandle, dltsChanged]
   doc o = do
-    hdl <- maybe (fail "invalid handle") return . T.stripPrefix "http://hdl.handle.net/2333.1/" =<< o JSON..: dltsHandle
-    cc <- one =<< o JSON..: dltsCollectionCode
-    cl <- one =<< o JSON..: dltsCollectionName
-    m <- o JSON..: dltsChanged
+    hdl <- dltsHandleID =<< o JSON..: dltsHandle
+    cc <- oneValue =<< o JSON..: dltsCollectionCode
+    cl <- oneValue =<< o JSON..: dltsCollectionName
+    -- mtime <- o JSON..: dltsChanged
     o' <- mapM JSON.parseJSON o
     return Document
-      { documentID = cc <> ":hdl-handle-net-2333-1-" <> hdl
+      { documentID = cc <> T.cons ':' hdl
       , documentCollection = cl
-      , documentModified = m
+      -- , documentModified = mtime
       , documentMetadata = o'
       }
-    where
-    one (Value [x]) = return x
-    one _ = fail "multiple values"
