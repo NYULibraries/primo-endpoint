@@ -28,6 +28,7 @@ executable primo-endpoint
     Fields
     Config
     Cache
+    Paginate
     Source.Solr
     Source.FDA
     Source.DLTS
