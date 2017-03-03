@@ -77,7 +77,7 @@ updateCollections force Config{ configCache = f, configCollections = l } t = do
                   hPutChar h ','
                   BSLC.hPut h . BSLC.init . BSLC.tail =<< BSLC.hGetContents r
                 else
-                  hClose h)
+                  hClose r)
           l
         hPutChar h ']'
         hSeek h AbsoluteSeek 0

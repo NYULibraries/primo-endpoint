@@ -28,7 +28,7 @@ data Generator
   = GeneratorString T.Text
   | GeneratorField T.Text
   | GeneratorMap
-    { _generatorMap :: T.Text -> Value
+    { _generatorMap :: Value -> Value
     , _generator :: Generator
     }
   | GeneratorList [Generator]
@@ -52,7 +52,7 @@ generate :: Metadata -> Generator -> Value
 generate _ (GeneratorString x) = value x
 generate m (GeneratorList l) = foldMap (generate m) l
 generate m (GeneratorField f) = HMap.lookupDefault mempty f m
-generate m (GeneratorMap f g) = foldMap f $ values $ generate m g
+generate m (GeneratorMap f g) = f $ generate m g
 generate m (GeneratorOr g d) = generate m g `valueOr` generate m d
 generate _ (GeneratorPaste []) = value T.empty
 generate m (GeneratorPaste [x]) = generate m x
@@ -75,7 +75,7 @@ generatorFields (GeneratorWith gm g) = foldMap generatorFields gm <> (generatorF
 
 -- |Translate language codes according to ISO639, if possible
 languageGenerator :: ISO639 -> Generator -> Generator
-languageGenerator iso = GeneratorMap $ \l -> value $ fromMaybe l $ lookupISO639 iso l
+languageGenerator iso = GeneratorMap $ mapValues (\l -> fromMaybe l $ lookupISO639 iso l)
 
 type Generators = HMap.HashMap T.Text Generator
 
@@ -93,29 +93,35 @@ parseGeneratorKey _ "string" v =
   JSON.withText "string literal" (return . GeneratorString) v
 parseGeneratorKey g "paste" v =
   JSON.withArray "paste components" (fmap GeneratorPaste . mapM (parseGenerator g) . V.toList) v
-parseGeneratorKey g "date" v =
-  JSON.withObject "date parser" (\o -> do
-    fmt <- o JSON..: "format"
-    val <- parseGenerator g =<< o JSON..: "value"
-    return $ GeneratorMap
-      (fromMaybe mempty . parseTimeM True defaultTimeLocale fmt . T.unpack)
-      val)
-    v
+parseGeneratorKey g "value" v = parseGenerator g v
 parseGeneratorKey g k JSON.Null | Just m <- HMap.lookup k g = return m
 parseGeneratorKey g k v | Just m <- HMap.lookup k g =
   JSON.withObject "generator arguments" (fmap (`GeneratorWith` m) . mapM (parseGenerator $ HMap.delete k g)) v
 parseGeneratorKey _ k _ = fail $ "Unknown field generator: " ++ show k
 
+parseGeneratorObject :: Generators -> JSON.Object -> JSON.Parser Generator
+parseGeneratorObject g = run handlers where
+  run [] o = foldMapM (uncurry $ parseGeneratorKey g) (HMap.toList o)
+  run ((f, h) : r) o
+    | Just x <- HMap.lookup f o = h x =<< run r (HMap.delete f o)
+    | otherwise = run r o
+  handlers =
+    [ ("join", gmap $ \j (Value l) -> if null l then Value l else value $ T.intercalate j l)
+    , ("default", \j x -> GeneratorOr x <$> parseGenerator g j)
+    , ("limit", gmap $ \n -> Value . take n . values)
+    , ("lookup", gmap $ \c -> foldMap (getMetadata c) . values)
+    , ("date", gmap $ \fmt -> foldMap (fromMaybe mempty . parseTimeM True defaultTimeLocale fmt . T.unpack) . values)
+    ]
+  gmap h j x = flip GeneratorMap x . h <$> JSON.parseJSON j
+
 parseGenerator :: Generators -> JSON.Value -> JSON.Parser Generator
 parseGenerator _ (JSON.String f)
   | Just (h, _) <- T.uncons f
-  , isAlpha h = return $ GeneratorField f
+  , isAlpha h || h == '_' = return $ GeneratorField f
 parseGenerator _ (JSON.String s) = return $ GeneratorString s
 parseGenerator _ JSON.Null = return $ mempty
 parseGenerator g (JSON.Array l) = GeneratorList <$> mapM (parseGenerator g) (V.toList l)
-parseGenerator g (JSON.Object o) = do
-  maybe return (\d x -> GeneratorOr x <$> parseGenerator g d) (HMap.lookup "default" o)
-    =<< foldMapM (uncurry $ parseGeneratorKey g) (HMap.toList $ HMap.delete "default" o)
+parseGenerator g (JSON.Object o) = parseGeneratorObject g o
 parseGenerator _ v = JSON.typeMismatch "field generator" v
 
 instance JSON.FromJSON Generator where

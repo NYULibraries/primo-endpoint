@@ -38,9 +38,8 @@ templates:
     data_provider:
       string: "NYU"
     date:
-      date:
-        format: "%B %Y"
-        value: ss_publication_date_text
+      field: ss_publication_date_text
+      date: "%B %Y"
     description:
       paste:
         - sm_collection_label
@@ -153,3 +152,63 @@ collections:
         string: "Book"
       format:
         string: "Book"
+  sdr:
+    source: SDR
+    fields:
+      identifier: dc_identifier_s
+      available:
+        paste:
+          - string: "https://geo.nyu.edu/catalog/"
+          - layer_slug_s
+      title: dc_title_s
+      description: dc_description_s
+      publisher: dc_publisher_s
+      type:
+        string: "Geospatial Data"
+      language: dc_language_s
+      format:
+        string: "Geospatial Data"
+      creator: dc_creator_sm
+      subject: dc_subject_sm
+      date: dct_issued_s
+      rights: dc_rights_s
+      data_provider: dct_provenance_s
+      geometry: layer_geom_type_s
+      subject_spatial: dct_spatial_sm
+      subject_temporal: dct_temporal_sm
+  woj:
+    source: SpecialCollections
+    filters:
+      collection_sim: 'David Wojnarowicz Papers'
+      dao_sim: 'Online Access'
+      format_sim: 'Archival Object'
+    fields:
+      identifier: _ref_ssi
+      date: unitdate_ssm
+      available:
+        paste:
+          - string: "http://dlib.nyu.edu/findingaids/html/"
+          - repository_ssi
+          - "/"
+          - ead_ssi
+          - "/dsc"
+          - field: _parent_ssm
+            limit: 1
+          - ".html#"
+          - _ref_ssi
+      title: unittitle_ssm
+      type: format_ssm
+      location: location_ssm
+      repo:
+        lookup:
+          fales:    "The Fales Library & Special Collections"
+          tamwag:   "Tamiment Library & Wagner Labor Archives"
+          archives: "New York University Archives"
+        field: repository_ssi
+      data_provider:
+        string: 'NYU'
+      relation:
+        value:
+          - collection_ssm
+          - parent_unittitles_ssm
+        join: ": "

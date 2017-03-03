@@ -2,8 +2,10 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-}
+{-# LANGUAGE ViewPatterns #-}
 module Document
   ( Value(..)
+  , mapValues
   , value
   , oneValue
   , parseValue
@@ -14,6 +16,7 @@ module Document
   , Document(..)
   , mapMetadata
   , Documents
+  , handleToID
   ) where
 
 import qualified Data.Aeson.Types as JSON
@@ -29,6 +32,9 @@ import qualified Data.Vector as V
 -- |Metadata values can always be multiple
 newtype Value = Value{ values :: [T.Text] }
   deriving (Eq, Ord, Monoid, Show)
+
+mapValues :: (T.Text -> T.Text) -> Value -> Value
+mapValues f = Value . map f . values
 
 -- |Single value
 value :: T.Text -> Value
@@ -112,3 +118,14 @@ mapMetadata :: (Metadata -> Metadata) -> Document -> Document
 mapMetadata f d = d{ documentMetadata = f $ documentMetadata d }
 
 type Documents = V.Vector Document
+
+-- |Convert a handle URL like @http://hdl.handle.net/x/y@ to a 'documentID' like @hdl-handle-net-x-y@.
+handleToID :: Monad m => Value -> m T.Text
+handleToID (Value [T.stripPrefix "http://hdl.handle.net/" -> Just h]) = return $ "hdl-handle-net-" <> T.map f h where
+  f '.' = '-'
+  f '/' = '-'
+  f '\\' = '-'
+  f '?' = '-'
+  f '=' = '-'
+  f c = c
+handleToID v = fail $ "invalid handle: " ++ show v

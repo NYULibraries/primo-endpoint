@@ -90,7 +90,7 @@ main = do
     ((</> ".cache" </> "primo-endpoint") <$> getHomeDirectory)
 #endif
     return optCache
-  createDirectoryIfMissing False cache
+  createDirectoryIfMissing True cache
   config <- loadConfig optForce cache optConfig
 
   _ <- updateCollections optForce config =<< getCurrentTime

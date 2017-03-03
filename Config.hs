@@ -8,6 +8,7 @@ module Config
   , loadCollection
   ) where
 
+import           Control.Arrow ((***))
 import           Control.Monad (guard, liftM2)
 import           Control.Monad.Trans.Maybe (MaybeT(..))
 import qualified Data.Aeson.Types as JSON
@@ -31,6 +32,8 @@ import           ISO639
 import           Source.FDA
 import           Source.DLTS
 import           Source.DLib
+import           Source.SDR
+import           Source.SpecialCollections
 
 type Interval = NominalDiffTime
 
@@ -56,6 +59,8 @@ data Source
   = SourceFDA Int
   | SourceDLTS DLTSCore T.Text
   | SourceDLib BS.ByteString
+  | SourceSDR
+  | SourceSpecialCollections [(BS.ByteString, BS.ByteString)]
   deriving (Show)
 
 data Collection = Collection
@@ -88,10 +93,16 @@ fixLanguage iso = HMap.adjust (languageGenerator iso) "language"
 
 -- |@parseSource collection source_type@
 parseSource :: Env -> JSON.Object -> T.Text -> JSON.Parser Source
-parseSource env o "FDA" = SourceFDA <$>
-  (maybe (o JSON..: "id") (\h -> maybe (fail "Unknown FDA handle") return $ HMap.lookup h (fdaIndex $ envIndices env)) =<< o JSON..:? "hdl")
-parseSource _ o "DLTS" = SourceDLTS <$> o JSON..: "core" <*> o JSON..: "code"
-parseSource _ o "DLib" = SourceDLib . TE.encodeUtf8 <$> o JSON..: "path"
+parseSource env o "FDA" = SourceFDA
+  <$> (maybe (o JSON..: "id") (\h -> maybe (fail "Unknown FDA handle") return $ HMap.lookup h (fdaIndex $ envIndices env)) =<< o JSON..:? "hdl")
+parseSource _ o "DLTS" = SourceDLTS
+  <$> o JSON..: "core"
+  <*> o JSON..: "code"
+parseSource _ o "DLib" = SourceDLib
+  <$> (TE.encodeUtf8 <$> o JSON..: "path")
+parseSource _ _ "SDR" = return SourceSDR
+parseSource _ o "SpecialCollections" = SourceSpecialCollections
+  <$> (map (TE.encodeUtf8 *** TE.encodeUtf8) . HMap.toList <$> o JSON..: "filters")
 parseSource _ _ s = fail $ "Unknown collection source: " ++ show s
 
 -- |@parseCollection generators templates key value@
@@ -157,4 +168,6 @@ loadCollection Collection{..} =
   loadSource (SourceFDA i) = loadFDA i
   loadSource (SourceDLTS c i) = loadDLTS collectionKey collectionName c i fl
   loadSource (SourceDLib p) = loadDLib collectionKey (fold collectionName) p
+  loadSource SourceSDR = loadSDR
+  loadSource (SourceSpecialCollections f) = loadSpecialCollections collectionKey f
   fl = generatorsFields collectionFields

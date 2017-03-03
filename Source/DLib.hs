@@ -13,7 +13,6 @@ import qualified Network.HTTP.Client as HTTP
 import           Util
 import           Document
 import           Source.Solr
-import           Source.DLTS (dltsHandleID)
 
 dlibRequest :: HTTP.Request
 dlibRequest = HTTP.parseRequest_ "http://dlib.nyu.edu"
@@ -23,7 +22,7 @@ parseDLib pfx name o = do
   let t = parseValue <$> HMap.delete "metadata" o
   m <- mapM pm =<< o JSON..: "metadata"
   let tm = t <> m
-  _hdl <- dltsHandleID $ getMetadata tm "handle"
+  _hdl <- handleToID $ getMetadata tm "handle"
   i <- o JSON..: "identifier"
   return Document
     { documentID = pfx <> T.cons ':' i -- _hdl

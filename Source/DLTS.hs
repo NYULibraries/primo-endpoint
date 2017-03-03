@@ -1,9 +1,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-}
-{-# LANGUAGE ViewPatterns #-}
 module Source.DLTS
-  ( dltsHandleID
-  , DLTSCore(..)
+  ( DLTSCore(..)
   , loadDLTS
   ) where
 
@@ -19,10 +17,6 @@ import qualified Network.HTTP.Client as HTTP
 import           Util
 import           Document
 import           Source.Solr
-
-dltsHandleID :: Monad m => Value -> m T.Text
-dltsHandleID (Value [T.stripPrefix "http://hdl.handle.net/2333.1/" -> Just h]) = return $ "hdl-handle-net-2333-1-" <> h
-dltsHandleID v = fail $ "invalid handle: " ++ show v
 
 data DLTSCore
   = DLTSCore
@@ -58,7 +52,7 @@ loadDLTS pfx name core c fl = parseM (mapM doc) =<< loadSolr dltsRequest (TE.enc
   DLTSCoreMeta{..} = dltsCoreMeta core
   fl' = HSet.fromList [dltsCollectionName, dltsHandle]
   doc o = do
-    hdl <- dltsHandleID =<< o JSON..: dltsHandle
+    hdl <- handleToID =<< o JSON..: dltsHandle
     i <- o JSON..:? "id"
     cl <- oneValue =<< o JSON..: dltsCollectionName
     -- mtime <- o JSON..: dltsChanged
