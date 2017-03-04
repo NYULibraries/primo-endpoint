@@ -37,6 +37,7 @@ import           Source.SpecialCollections
 
 type Interval = NominalDiffTime
 
+-- |Bootstrapping configuration values, needed to load the rest of the config file.
 data PreConfig = PreConfig
   { configInterval :: Interval
   , configFDACollections :: Int
@@ -47,14 +48,18 @@ instance JSON.FromJSON PreConfig where
     <$> o JSON..: "interval"
     <*> (o JSON..: "fda" >>= (JSON..: "collections"))
 
+-- |Cached indices for converting to collection identifiers.
+-- Currenly only used for FDA.
 data Indices = Indices
-  { fdaIndex :: HMap.HashMap Int Int
+  { fdaIndex :: HMap.HashMap Int Int -- ^map from FDA handle suffix to database id
   } deriving (Show, Read)
 
 loadIndices :: PreConfig -> IO Indices
 loadIndices conf = Indices
   <$> loadFDAIndex (configFDACollections conf)
 
+-- |Possible metadata sources.
+-- These correspond to modules in "Source" and the collection source config key.
 data Source
   = SourceFDA Int
   | SourceDLTS DLTSCore T.Text
@@ -64,28 +69,31 @@ data Source
   deriving (Show)
 
 data Collection = Collection
-  { collectionKey :: T.Text
+  { collectionKey :: T.Text -- ^Unique key for this collection
   , collectionSource :: Source
-  , collectionCache :: FilePath
-  , collectionInterval :: Interval
+  , collectionCache :: FilePath -- ^JSON cache file for processed 'Document's
+  , collectionInterval :: Interval -- ^Max cache file age before reloading
   , collectionName :: Maybe T.Text
-  , collectionFields :: Generators
+  , collectionFields :: Generators -- ^Metadata field mapping
   }
 
+-- |Map from 'collectionKey' to 'Collection'
 type Collections = HMap.HashMap T.Text Collection
 
+-- |A loaded configuration
 data Config = Config
   { configCollections :: Collections
-  , configCache :: FilePath
+  , configCache :: FilePath -- ^Aggregate JSON cache for final output
   }
 
+-- |Values used during loading the config file
 data Env = Env
   { envPreConfig :: !PreConfig
-  , envCache :: !FilePath
+  , envCache :: !FilePath -- ^Cache directory
   , envISO639 :: !ISO639
   , envIndices :: !Indices
-  , envGenerators :: !Generators
-  , envTemplates :: !(HMap.HashMap T.Text Generators)
+  , envGenerators :: !Generators -- ^Generator macros expanded during loading 'collectionFields'
+  , envTemplates :: !(HMap.HashMap T.Text Generators) -- ^Templates that can be included in 'collectionFields'
   }
 
 fixLanguage :: ISO639 -> Generators -> Generators
@@ -147,6 +155,7 @@ updateIndices force pc f = maybe (do
     guard $ d < configInterval pc
     MaybeT $ readMaybe <$> readFile f)
 
+-- @loadConfig force cacheDir confFile@
 loadConfig :: Bool -> FilePath -> FilePath -> IO Config
 loadConfig force cache conf = do
   jc <- fromMaybe JSON.Null <$> YAML.decodeFile conf

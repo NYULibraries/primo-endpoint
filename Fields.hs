@@ -24,6 +24,7 @@ import           Util
 import           ISO639
 import           Document
 
+-- |A 'Value' generator for a single metadata field
 data Generator
   = GeneratorString T.Text
   | GeneratorField T.Text
@@ -48,6 +49,7 @@ instance Monoid Generator where
   mappend a@(GeneratorList _) b = a <> GeneratorList [b]
   mappend a b = GeneratorList [a] <> GeneratorList [b]
 
+-- |Generate a single 'Value' given a set of input metadata values and a field 'Generator'
 generate :: Metadata -> Generator -> Value
 generate _ (GeneratorString x) = value x
 generate m (GeneratorList l) = foldMap (generate m) l
@@ -77,8 +79,10 @@ generatorFields (GeneratorWith gm g) = foldMap generatorFields gm <> (generatorF
 languageGenerator :: ISO639 -> Generator -> Generator
 languageGenerator iso = GeneratorMap $ mapValues (\l -> fromMaybe l $ lookupISO639 iso l)
 
+-- |An entire metadata cross-walk, mapping a set of output fields to their 'Generator'
 type Generators = HMap.HashMap T.Text Generator
 
+-- |Translate metadata using a cross-walk
 generateFields :: Generators -> Metadata -> Metadata
 generateFields g m = HMap.map (generate m) g
 
@@ -127,5 +131,6 @@ parseGenerator _ v = JSON.typeMismatch "field generator" v
 instance JSON.FromJSON Generator where
   parseJSON = parseGenerator mempty
 
+-- |Parse a cross-walk configuration as a set of field generators, given a set of generator macros.
 parseGenerators :: Generators -> JSON.Value -> JSON.Parser Generators
 parseGenerators g v = withObjectOrNull "field generators" (mapM $ parseGenerator g) v
