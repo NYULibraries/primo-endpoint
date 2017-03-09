@@ -37,6 +37,7 @@ data Opts = Opts
   , optForce :: Bool
   , optOutput :: Maybe String
   , optServer :: Maybe Int
+  , optLog :: Bool
   }
 
 defOpts :: Opts
@@ -47,6 +48,7 @@ defOpts = Opts
   , optForce = False
   , optOutput = Nothing
   , optServer = Nothing
+  , optLog = False
   }
 
 opts :: [Opt.OptDescr (Opts -> Opts)]
@@ -63,6 +65,8 @@ opts =
     "Write JSON output to file [-]"
   , Opt.Option "w" ["web-server"] (Opt.OptArg (\f o -> o{ optServer = Just (maybe 80 read f) }) "PORT")
     "Run a web server on PORT [80] to serve the result"
+  , Opt.Option "l" ["log-access"] (Opt.NoArg (\o -> o{ optLog = True }))
+    "Log access to stdout"
   ]
 
 outputFile :: String -> BSLC.ByteString -> IO ()
@@ -98,4 +102,4 @@ main = do
   mapM_ (\o -> outputFile o =<< BSLC.readFile (configCache config)) optOutput
 
   forM_ optServer $ \port -> do
-    server port config
+    server port optLog config

@@ -57,5 +57,6 @@ executable primo-endpoint
     http-conduit >= 2.2,
     http-types,
     wai,
+    wai-extra,
     warp,
     yaml
