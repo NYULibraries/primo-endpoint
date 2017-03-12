@@ -97,9 +97,9 @@ main = do
   createDirectoryIfMissing True cache
   config <- loadConfig optForce cache optConfig
 
-  _ <- updateCollections config optForce =<< getCurrentTime
+  _ <- updateCollection config optForce =<< getCurrentTime
 
-  mapM_ (\o -> outputFile o =<< BSLC.readFile (configCache config)) optOutput
+  mapM_ (\o -> outputFile o =<< BSLC.readFile (collectionCache config)) optOutput
 
   forM_ optServer $ \port -> do
     server port optLog config

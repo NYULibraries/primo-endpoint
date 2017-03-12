@@ -1,16 +1,18 @@
+{-# LANGUAGE CPP #-}
+{-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-}
 module Cache
-  ( updateCollections
-  , getCollection
+  ( updateCollection
   ) where
 
-import           Control.Arrow ((&&&))
 import           Control.Exception (bracketOnError, try, SomeException)
-import           Control.Monad (guard, liftM2)
+#if MIN_VERSION_base(4,8,0)
+import           Control.Exception (displayException)
+#endif
+import           Control.Monad (liftM2)
 import qualified Data.Aeson as JSON
 import qualified Data.ByteString.Lazy.Char8 as BSLC
-import qualified Data.HashMap.Strict as HMap
-import           Data.Monoid (Any(Any))
+import           Data.Monoid (Any(..))
 import qualified Data.Text as T
 import           Data.Time.Clock (UTCTime(..), diffUTCTime)
 import           System.FilePath (splitFileName)
@@ -19,6 +21,11 @@ import           System.IO (Handle, IOMode(ReadMode), SeekMode(AbsoluteSeek), st
 
 import           Util
 import           Config
+
+#if !MIN_VERSION_base(4,8,0)
+displayException :: Exception e => e -> String
+displayException = show
+#endif
 
 readBinaryFile :: FilePath -> (Handle -> IO a) -> IO a
 readBinaryFile f h = bracketOnError
@@ -52,44 +59,32 @@ updateFile f w = bracketOnError
 
 updateCollection :: Collection -> Bool -> UTCTime -> IO UTCTime
 updateCollection c@Collection{ collectionCache = f } force t = do
-  r <- if force then return Nothing else do
-    m <- getModificationTime0 f
-    return $ m <$ guard (diffUTCTime t m < collectionInterval c)
-  maybe
-    (do
-      d <- try $ loadCollection c
-      _ <- updateFile f $ \h -> either
-        (\e -> do
-          let s = show (collectionSource c) ++ ": " ++ show (e :: SomeException)
-          hPutStrLn stderr s
-          hPutStr h s)
-        (BSLC.hPut h . JSON.encode)
-        d
-      getModificationTime0 f)
-    return
-    r
-
-updateCollections :: Config -> Bool -> UTCTime -> IO UTCTime
-updateCollections Config{ configCache = f, configCollections = l } force t = do
   m <- getModificationTime0 f
-  Any u <- foldMapM (\c -> Any . (m <) <$> updateCollection c force t) l
-  r <- if u
-    then
-      updateFile f $ \h -> do
-        mapM_ (\c -> fromDoesNotExist () $
-            readBinaryFile (collectionCache c) $ \r -> do
-              z <- hFileSize r
-              o <- if z > 2 then Just <$> hGetChar r else return Nothing
-              if o == Just '['
-                then BSLC.hPut h . BSLC.cons ',' . BSLC.init =<< BSLC.hGetContents r
-                else hClose r)
-          l
-        hPutChar h ']'
-        hSeek h AbsoluteSeek 0
-        hPutChar h '['
-    else return False
-  if r then getModificationTime0 f else return m
-
-getCollection :: Config -> Maybe T.Text -> Maybe (FilePath, Bool -> UTCTime -> IO UTCTime)
-getCollection conf Nothing = Just (configCache conf, updateCollections conf)
-getCollection conf (Just c) = (collectionCache &&& updateCollection) <$> HMap.lookup c (configCollections conf)
+  let uc = force || diffUTCTime t m < collectionInterval c
+  u <- case loadCollection c of
+    Left l | uc ->
+      getAny <$> foldMapM (\c' -> Any . (m <) <$> updateCollection c' force t) l
+    _ -> return uc
+  if not u then return m else do
+    d <- either (return . Right . Left) (try . fmap Right) $ loadCollection c
+    r <- updateFile f $ \h -> either
+      (\e -> do
+        let s = T.unpack (T.intercalate "/" $ collectionKey c) ++ ": " ++ displayException (e :: SomeException)
+        hPutStrLn stderr s
+        hPutStr h s)
+      (either
+        (\l -> do
+          mapM_ (\Collection{ collectionCache = cf } -> fromDoesNotExist () $
+              readBinaryFile cf $ \r -> do
+                z <- hFileSize r
+                o <- if z > 2 then Just <$> hGetChar r else return Nothing
+                if o == Just '['
+                  then BSLC.hPut h . BSLC.cons ',' . BSLC.init =<< BSLC.hGetContents r
+                  else hClose r)
+            l
+          hPutChar h ']'
+          hSeek h AbsoluteSeek 0
+          hPutChar h '[')
+        (BSLC.hPut h . JSON.encode))
+      d
+    if r then getModificationTime0 f else return m

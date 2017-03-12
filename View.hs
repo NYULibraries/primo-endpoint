@@ -38,9 +38,9 @@ htmlDocument Document{..} =
 htmlDocuments :: Documents -> H.Html
 htmlDocuments = foldMap htmlDocument
 
-view :: Config -> Maybe T.Text -> FilePath -> Query -> IO H.Html
-view conf collid f q = do
-  d <- fromDoesNotExist BSLC.empty $ BSLC.readFile f
+view :: Config -> Collection -> Query -> IO H.Html
+view conf coll q = do
+  d <- fromDoesNotExist BSLC.empty $ BSLC.readFile $ collectionCache coll
   let j = maybe (Left d) Right $ JSON.decode d
       n = either (const 0) V.length j
       np = (n + count - 1) `div` count
@@ -48,10 +48,11 @@ view conf collid f q = do
   return $ H.docTypeHtml $ H.body $
     (H.form H.! HA.method "get" H.! HA.action "/" $
       (H.select H.! HA.name "collection")
-        (collopt Nothing "all"
-        <> HMap.foldrWithKey (\k v -> mappend $
-            collopt (Just k) $ fromMaybe k $ collectionName v)
-          mempty (configCollections conf))
+        (foldMap (\c ->
+            let i = T.intercalate "/" $ collectionKey c in
+            H.option H.! HA.value (H.textValue i) H.!? (collectionKey coll == collectionKey c, HA.selected "selected")
+              $ H.text $ fromMaybe i $ collectionName c)
+          $ allCollections conf)
       -- <> (if page == 1 then mempty else H.input H.! HA.type_ "submit" H.! HA.name "page" H.! HA.value "1")
       <> H.input H.! HA.type_ "number" H.! HA.name "page" H.! HA.min (numValue 1) H.! HA.max (numValue np) H.! HA.step (numValue 1) H.! HA.value (numValue page)
       <> H.input H.! HA.type_ "number" H.! HA.name "count" H.! HA.min (numValue 1) H.! HA.step (numValue 1) H.! HA.value (numValue count)
@@ -61,5 +62,4 @@ view conf collid f q = do
   getq d k = fromMaybe d $ readMaybe . BSC.unpack =<< join (lookup k q)
   page = getq 1 "page"
   count = max 1 $ getq 10 "count"
-  collopt i n = H.option H.! HA.value (foldMap H.textValue i) H.!? (collid == i, HA.selected "selected") $ H.text n
   numValue = H.stringValue . show
