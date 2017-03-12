@@ -60,7 +60,7 @@ updateFile f w = bracketOnError
 updateCollection :: Collection -> Bool -> UTCTime -> IO UTCTime
 updateCollection c@Collection{ collectionCache = f } force t = do
   m <- getModificationTime0 f
-  let uc = force || diffUTCTime t m < collectionInterval c
+  let uc = force || diffUTCTime t m >= collectionInterval c
   u <- case loadCollection c of
     Left l | uc ->
       getAny <$> foldMapM (\c' -> Any . (m <) <$> updateCollection c' force t) l
