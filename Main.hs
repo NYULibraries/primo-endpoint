@@ -97,7 +97,7 @@ main = do
   createDirectoryIfMissing True cache
   config <- loadConfig optForce cache optConfig
 
-  _ <- updateCollections optForce config =<< getCurrentTime
+  _ <- updateCollections config optForce =<< getCurrentTime
 
   mapM_ (\o -> outputFile o =<< BSLC.readFile (configCache config)) optOutput
 

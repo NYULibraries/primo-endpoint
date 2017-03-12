@@ -36,6 +36,7 @@ executable primo-endpoint
     Source.SDR
     Source.SpecialCollections
     Server
+    View
   default-language:    Haskell2010
   ghc-options: -Wall
   build-depends:       
@@ -50,6 +51,7 @@ executable primo-endpoint
     unordered-containers,
     vector,
     aeson,
+    blaze-html,
     connection,
     network-uri,
     http-client >= 0.5,

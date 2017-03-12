@@ -21,7 +21,7 @@ module Document
 
 import qualified Data.Aeson.Types as JSON
 import qualified Data.HashMap.Strict as HMap
-import           Data.Foldable (fold)
+import           Data.Foldable (fold, foldlM)
 import           Data.Maybe (fromMaybe, mapMaybe)
 import           Data.Monoid ((<>))
 import qualified Data.Text as T
@@ -113,6 +113,18 @@ instance JSON.ToJSON Document where
     $ HMap.insert "id" (JSON.String documentID)
     $ HMap.insert "collection_ssm" (JSON.String documentCollection)
     $ HMap.fromList $ mapMaybe (\(k, v) -> (,) ("desc_metadata__" <> k <> "_tesim") <$> valueJSON v) $ HMap.toList documentMetadata
+
+instance JSON.FromJSON Document where
+  parseJSON = JSON.withObject "document" $ \o -> do
+    i <- o JSON..: "id"
+    c <- o JSON..: "collection_ssm"
+    m <- foldlM (\m (k, v) -> maybe (return m) (\k' -> addMetadata m k' <$> JSON.parseJSON v)
+      $ T.stripSuffix "_tesim" =<< T.stripPrefix "desc_metadata__" k) HMap.empty $ HMap.toList o
+    return Document
+      { documentID = i
+      , documentCollection = c
+      , documentMetadata = m
+      }
 
 mapMetadata :: (Metadata -> Metadata) -> Document -> Document
 mapMetadata f d = d{ documentMetadata = f $ documentMetadata d }
