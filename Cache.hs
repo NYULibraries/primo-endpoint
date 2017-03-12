@@ -9,7 +9,7 @@ import           Control.Exception (bracketOnError, try, SomeException)
 #if MIN_VERSION_base(4,8,0)
 import           Control.Exception (displayException)
 #endif
-import           Control.Monad (liftM2)
+import           Control.Monad (liftM2, when)
 import qualified Data.Aeson as JSON
 import qualified Data.ByteString.Lazy.Char8 as BSLC
 import           Data.Monoid (Any(..))
@@ -66,10 +66,11 @@ updateCollection c@Collection{ collectionCache = f } force t = do
       getAny <$> foldMapM (\c' -> Any . (m <) <$> updateCollection c' force t) l
     _ -> return uc
   if not u then return m else do
+    when (collectionVerbose c) $ putStrLn $ "updating " ++ cis
     d <- either (return . Right . Left) (try . fmap Right) $ loadCollection c
     r <- updateFile f $ \h -> either
       (\e -> do
-        let s = T.unpack (T.intercalate "/" $ collectionKey c) ++ ": " ++ displayException (e :: SomeException)
+        let s = cis ++ ": " ++ displayException (e :: SomeException)
         hPutStrLn stderr s
         hPutStr h s)
       (either
@@ -88,3 +89,5 @@ updateCollection c@Collection{ collectionCache = f } force t = do
         (BSLC.hPut h . JSON.encode))
       d
     if r then getModificationTime0 f else return m
+  where
+  cis = T.unpack $ collectionId c

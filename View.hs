@@ -62,7 +62,7 @@ view conf coll q = do
   return $ H.docTypeHtml $ H.body $ H.form H.! HA.method "get" H.! HA.action "/"
     $  H.label ("collection" <> (H.select H.! HA.name "collection")
       (foldMap (\c ->
-          let i = T.intercalate "/" $ collectionKey c in
+          let i = collectionId c in
           H.option H.! HA.value (H.textValue i) H.!? (collectionKey coll == collectionKey c, HA.selected "selected")
             $ H.text $ fromMaybe i $ collectionName c)
         $ allCollections conf))
@@ -71,7 +71,7 @@ view conf coll q = do
       <> "per page")
     <> " "
     <> H.input H.! HA.type_ "submit"
-    <> H.h2 (H.text $ fromMaybe (T.intercalate "/" $ collectionKey coll) $ collectionName coll)
+    <> H.h2 (H.text $ fromMaybe (collectionId coll) $ collectionName coll)
     <> (H.a H.! HA.href (H.unsafeLazyByteStringValue $ BSB.toLazyByteString $ encodePath (collectionKey coll) [("json", Just "1")])) "json"
     <> pagenav
     <> either (H.string . BSLC.unpack) htmlDocuments l

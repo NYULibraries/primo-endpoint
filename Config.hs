@@ -3,6 +3,7 @@
 module Config
   ( Collection(..)
   , Collections
+  , collectionId
   , Config
   , loadConfig
   , allCollections
@@ -72,12 +73,16 @@ data Source
 
 data Collection = Collection
   { collectionKey :: [T.Text] -- ^Unique key for this collection
-  , collectionSource :: Source
+  , collectionSource :: !Source
   , collectionCache :: FilePath -- ^JSON cache file for processed 'Document's
-  , collectionInterval :: Interval -- ^Max cache file age before reloading
+  , collectionInterval :: !Interval -- ^Max cache file age before reloading
   , collectionName :: Maybe T.Text
   , collectionFields :: Generators -- ^Metadata field mapping
+  , collectionVerbose :: !Bool
   }
+
+collectionId :: Collection -> T.Text
+collectionId = T.intercalate "/" . collectionKey
 
 -- |Map from 'collectionKey' to 'Collection'
 type Collections = HMap.HashMap T.Text Collection
@@ -93,6 +98,7 @@ data Env = Env
   , envIndices :: !Indices
   , envGenerators :: !Generators -- ^Generator macros expanded during loading 'collectionFields'
   , envTemplates :: !(HMap.HashMap T.Text Generators) -- ^Templates that can be included in 'collectionFields'
+  , envVerbose :: !Bool
   }
 
 fixLanguage :: ISO639 -> Generators -> Generators
@@ -127,6 +133,7 @@ parseCollection env key = JSON.withObject "collection" $ \o -> do
     , collectionInterval = fromMaybe (configInterval $ envPreConfig env) i
     , collectionName = n
     , collectionFields = fixLanguage (envISO639 env) $ f <> t
+    , collectionVerbose = envVerbose env
     }
   where
   getTemplate = JSON.withText "template name" $ \s ->
@@ -145,6 +152,7 @@ parseConfig env = JSON.withObject "config" $ \o -> do
     , collectionInterval = configInterval (envPreConfig env) / fromIntegral (max 1 $ HMap.size c)
     , collectionName = Just "all"
     , collectionFields = mempty
+    , collectionVerbose = envVerbose env
     }
 
 updateIndices :: Bool -> PreConfig -> FilePath -> IO Indices
@@ -159,8 +167,8 @@ updateIndices force pc f = maybe (do
     MaybeT $ readMaybe <$> readFile f)
 
 -- @loadConfig force cacheDir confFile@
-loadConfig :: Bool -> FilePath -> FilePath -> IO Config
-loadConfig force cache conf = do
+loadConfig :: Bool -> FilePath -> FilePath -> Bool -> IO Config
+loadConfig force cache conf verb = do
   jc <- fromMaybe JSON.Null <$> YAML.decodeFile conf
   pc <- parseJSONM jc
   idx <- updateIndices force pc (cache </> "index")
@@ -172,6 +180,7 @@ loadConfig force cache conf = do
     , envIndices = idx
     , envGenerators = HMap.empty
     , envTemplates = HMap.empty
+    , envVerbose = verb
     }) jc
 
 allCollections :: Config -> [Collection]

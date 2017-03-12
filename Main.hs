@@ -38,6 +38,7 @@ data Opts = Opts
   , optOutput :: Maybe String
   , optServer :: Maybe Int
   , optLog :: Bool
+  , optVerbose :: Bool
   }
 
 defOpts :: Opts
@@ -49,6 +50,7 @@ defOpts = Opts
   , optOutput = Nothing
   , optServer = Nothing
   , optLog = False
+  , optVerbose = False
   }
 
 opts :: [Opt.OptDescr (Opts -> Opts)]
@@ -67,6 +69,8 @@ opts =
     "Run a web server on PORT [80] to serve the result"
   , Opt.Option "l" ["log-access"] (Opt.NoArg (\o -> o{ optLog = True }))
     "Log access to stdout"
+  , Opt.Option "v" ["verbose"] (Opt.NoArg (\o -> o{ optVerbose = True }))
+    "Log collection refreshes to stdout"
   ]
 
 outputFile :: String -> BSLC.ByteString -> IO ()
@@ -95,7 +99,7 @@ main = do
 #endif
     return optCache
   createDirectoryIfMissing True cache
-  config <- loadConfig optForce cache optConfig
+  config <- loadConfig optForce cache optConfig optVerbose
 
   _ <- updateCollection config optForce =<< getCurrentTime
 
