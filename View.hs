@@ -66,13 +66,12 @@ view conf coll q = do
           H.option H.! HA.value (H.textValue i) H.!? (collectionKey coll == collectionKey c, HA.selected "selected")
             $ H.text $ fromMaybe i $ collectionName c)
         $ allCollections conf))
-    <> " "
-    <> H.label (H.input H.! HA.type_ "number" H.! HA.name "count" H.! HA.min (numValue 1) H.! HA.max (numValue n) H.! HA.step (numValue 1) H.! HA.value (numValue count)
+    <> " " <> H.label (H.input H.! HA.type_ "number" H.! HA.name "count" H.! HA.min (numValue 1) H.! HA.max (numValue n) H.! HA.step (numValue 1) H.! HA.value (numValue count)
       <> "per page")
-    <> " "
-    <> H.input H.! HA.type_ "submit"
+    <> " " <> H.input H.! HA.type_ "submit"
     <> H.h2 (H.text $ fromMaybe (collectionId coll) $ collectionName coll)
-    <> (H.a H.! HA.href (H.unsafeLazyByteStringValue $ BSB.toLazyByteString $ encodePath (collectionKey coll) [("json", Just "1")])) "json"
+    <> " " <> (H.a H.! HA.href (H.unsafeLazyByteStringValue $ BSB.toLazyByteString $ encodePath (collectionKey coll) [("json", Just "1")])) "json"
+    <> " " <> H.toMarkup n <> " documents"
     <> pagenav
     <> either (H.string . BSLC.unpack) htmlDocuments l
     <> pagenav
