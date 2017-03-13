@@ -29,14 +29,15 @@ serve conf req = maybe
     "GET" -> do
       t <- getCurrentTime
       m <- updateCollection c (boolq "refresh") t
-      if html
-        then Wai.responseBuilder ok200 [(hContentType, "text/html;charset=utf-8")]
+      Wai.mapResponseHeaders (++
+        [ (hLastModified, formatDate m)
+        , (hDate, formatDate t)
+        ]) <$> if html
+        then Wai.responseBuilder ok200
+          [ (hContentType, "text/html;charset=utf-8") ]
           . renderHtmlBuilder <$> view conf c (Wai.queryString req)
         else return $ Wai.responseFile ok200
-          [ (hContentType, "application/json")
-          , (hLastModified, formatDate m)
-          , (hDate, formatDate t)
-          ] (collectionCache c) Nothing
+          [ (hContentType, "application/json") ] (collectionCache c) Nothing
     _ -> return $ Wai.responseLBS methodNotAllowed405
       [(hAccept, "GET")] mempty)
   coll
