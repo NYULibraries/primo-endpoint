@@ -1,0 +1,47 @@
+{
+   "response" : {
+      "docs" : [
+         {
+            "_version_" : 1559035754088235008,
+            "collection_ssm" : [
+               "David Wojnarowicz Papers"
+            ],
+            "collection_unitid_ssm" : [
+               "MSS.092"
+            ],
+            "component_children_bsi" : true,
+            "component_level_isim" : [
+               1
+            ],
+            "ead_ssi" : "woj",
+            "format_ssm" : [
+               "Archival Series"
+            ],
+            "heading_ssm" : [
+               "Series I: Journals"
+            ],
+            "id" : "wojaspace_ref11",
+            "ref_ssi" : "aspace_ref11",
+            "repository_ssi" : "fales",
+            "repository_ssm" : [
+               "fales"
+            ],
+            "timestamp" : "2017-02-11T11:25:57.032Z",
+            "unittitle_ssm" : [
+               "Series I: Journals"
+            ]
+         }
+      ],
+      "pages" : {
+         "current_page" : 1,
+         "first_page?" : true,
+         "last_page?" : false,
+         "limit_value" : 10,
+         "next_page" : 2,
+         "offset_value" : 0,
+         "prev_page" : null,
+         "total_count" : 3313,
+         "total_pages" : 332
+      }
+   }
+}

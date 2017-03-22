@@ -1,0 +1,90 @@
+[
+   {
+      "archived" : "true",
+      "bitstreams" : null,
+      "expand" : [
+         "parentCollection",
+         "parentCollectionList",
+         "parentCommunityList",
+         "bitstreams",
+         "all"
+      ],
+      "handle" : "2451/37861",
+      "id" : 38128,
+      "lastModified" : "2017-02-08 11:32:49.235",
+      "link" : "/rest/items/38128",
+      "metadata" : [
+         {
+            "key" : "dc.contributor.author",
+            "language" : null,
+            "value" : "Bezbaruah, M.P."
+         },
+         {
+            "key" : "dc.coverage.spatial",
+            "language" : "en",
+            "value" : "South Asia; India; Northeast India"
+         },
+         {
+            "key" : "dc.date.accessioned",
+            "language" : null,
+            "value" : "2017-02-08T16:32:49Z"
+         },
+         {
+            "key" : "dc.date.available",
+            "language" : null,
+            "value" : "2017-02-08T16:32:49Z"
+         },
+         {
+            "key" : "dc.date.issued",
+            "language" : null,
+            "value" : "2014"
+         },
+         {
+            "key" : "dc.identifier.citation",
+            "language" : "en",
+            "value" : "http://itanagar.nic.in/documents/Bezbaruah.PDF"
+         },
+         {
+            "key" : "dc.identifier.uri",
+            "language" : null,
+            "value" : "http://hdl.handle.net/2451/37861"
+         },
+         {
+            "key" : "dc.description",
+            "language" : "en",
+            "value" : "\"The Ministry of Home Affairs set up a committee under the Chairmanship of Shri M.P. Bezbaruah, IAS (Retd), Member North East Council to look into various kinds of concerns of the people hailing from North Eastern states of India who are living in different parts of the country especially the Metropolitan cities and to suggest suitable remedial measure which could be taken up by the Government in light of the unfortunate death of Sh. Nido Tania, a student from Arunachal Pradesh\"."
+         },
+         {
+            "key" : "dc.publisher",
+            "language" : "en",
+            "value" : "Ministry of Home Affairs"
+         },
+         {
+            "key" : "dc.rights",
+            "language" : "en",
+            "value" : "NYU Libraries is providing access to these materials as a service to our scholarly community. We do not claim the copyright in these materials, nor can we give permission for their re-use. If you would like to request that we take down any of this material, please write to archive.help@nyu.edu with the following information: Provide the URL of the material that is the basis of your inquiry; Identify the material you have rights to; Provide your contact information, including name, address, telephone number, and e-mail address; Provide a statement of your good-faith belief that the material you identified is infringing of the material you have rights to."
+         },
+         {
+            "key" : "dc.subject",
+            "language" : "en",
+            "value" : "discrimination; race relations; human rights; equality; immigrants"
+         },
+         {
+            "key" : "dc.title",
+            "language" : "en",
+            "value" : "Report of the Committee under the chairmanship of Shri M.P. Bezbaruah to look into the concerns of the people of the northeast living in other parts of the country"
+         },
+         {
+            "key" : "dc.publisher.place",
+            "language" : "en",
+            "value" : "New Delhi"
+         }
+      ],
+      "name" : "Report of the Committee under the chairmanship of Shri M.P. Bezbaruah to look into the concerns of the people of the northeast living in other parts of the country",
+      "parentCollection" : null,
+      "parentCollectionList" : null,
+      "parentCommunityList" : null,
+      "type" : "item",
+      "withdrawn" : "false"
+   }
+]

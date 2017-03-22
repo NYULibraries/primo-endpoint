@@ -1,0 +1,244 @@
+{
+   "response" : {
+      "docs" : [
+         {
+            "base_url" : "/viewer/",
+            "bs_promote" : false,
+            "bs_status" : true,
+            "bs_sticky" : false,
+            "bs_translate" : false,
+            "bundle" : "dlts_book",
+            "bundle_name" : "Book",
+            "content" : " Title:  Freedom, November 1950 Provider:  The Tamiment Library and Robert F. Wagner Labor Archives PDF:  High resolution Low resolution  The Tamiment Library and Robert F. Wagner Labor Archives The Tamiment Library and Robert F. Wagner Labor Archives Freedom, November 1950 E185.61 .F744 Robeson, Paul, 1898-1976, editorial director. Robeson, Paul, 1898-1976, editorial director. Burnham, Louis E., editor. Burnham, Louis E., editor. Robeson, PaulJr, 1927-2014, contributor. Robeson, PaulJr, 1927-2014, contributor. Freedom Associates 1950-11-01T00:00:00 New York, N.Y African Americans -- Civil rights -- United States -- Newspapers African Americans -- Economic conditions -- Newspapers Civil rights -- United States -- Newspapers Civil rights and socialism -- United States -- Newspapers African Americans -- Civil rights African Americans -- Economic conditions Race relations United States -- Race relations -- Newspapers United States",
+            "dc_identifier" : "705lna/node/13974",
+            "dm_field_publication_date" : [
+               "1950-11-01T00:00:00Z"
+            ],
+            "dm_field_publication_date_end" : [
+               "1950-11-01T00:00:00Z"
+            ],
+            "ds_changed" : "2017-01-13T21:52:18Z",
+            "ds_created" : "2016-12-15T16:52:53Z",
+            "ds_last_comment_or_change" : "2017-01-13T21:52:18Z",
+            "entity_id" : 13974,
+            "entity_type" : "node",
+            "hash" : "705lna",
+            "iass_author" : "robeson, paul, 1898-1976, editorial director.",
+            "iass_longlabel" : "freedom, november 1950",
+            "iass_pubyear" : "1950",
+            "iass_subject" : "african americans -- civil rights -- united states -- newspapers",
+            "iass_timestamp" : "-604868400",
+            "id" : "705lna/node/13974",
+            "im_field_binding_orientation" : [
+               1
+            ],
+            "im_field_collection" : [
+               13973
+            ],
+            "im_field_partner" : [
+               570
+            ],
+            "im_field_read_order" : [
+               0
+            ],
+            "im_field_scan_order" : [
+               0
+            ],
+            "im_field_subject" : [
+               3966,
+               3967,
+               3968,
+               3969,
+               3970,
+               3971,
+               3972,
+               3973,
+               3974
+            ],
+            "im_vid_3" : [
+               3966,
+               3967,
+               3968,
+               3969,
+               3970,
+               3971,
+               3972,
+               3973,
+               3974
+            ],
+            "is_field_binding_orientation" : 1,
+            "is_field_read_order" : 0,
+            "is_field_scan_order" : 0,
+            "is_ispartof_multivol" : 0,
+            "is_tnid" : 0,
+            "is_uid" : 0,
+            "itm_field_page_count" : [
+               8
+            ],
+            "itm_field_sequence_count" : [
+               8
+            ],
+            "its_field_page_count" : 8,
+            "its_field_sequence_count" : 8,
+            "label" : "Freedom, November 1950",
+            "path" : "node/13974",
+            "path_alias" : "books/tamwag_fdm000001",
+            "site" : "http://sites.dlib.nyu.edu/viewer/",
+            "sm_author" : [
+               "Robeson, Paul, 1898-1976, editorial director.",
+               "Burnham, Louis E., editor.",
+               "Robeson, PaulJr, 1927-2014, contributor."
+            ],
+            "sm_collection_code" : [
+               "fdm"
+            ],
+            "sm_collection_identifier" : [
+               "1340863e-b6f3-40bb-a674-02dcd2c33b37"
+            ],
+            "sm_collection_label" : [
+               "Freedom"
+            ],
+            "sm_collection_partner_code" : [
+               "tamwag"
+            ],
+            "sm_collection_partner_identifier" : [
+               "95b6d056-9026-4436-b3a9-4fad9a7a927f"
+            ],
+            "sm_collection_partner_label" : [
+               "The Tamiment Library and Robert F. Wagner Labor Archives"
+            ],
+            "sm_field_author" : [
+               "Robeson, Paul, 1898-1976, editorial director.",
+               "Burnham, Louis E., editor.",
+               "Robeson, PaulJr, 1927-2014, contributor."
+            ],
+            "sm_field_call_number" : [
+               "E185.61.F744"
+            ],
+            "sm_field_identifier" : [
+               "tamwag_fdm000001"
+            ],
+            "sm_field_language" : [
+               "English"
+            ],
+            "sm_field_language_code" : [
+               "eng"
+            ],
+            "sm_field_publication_date_text" : [
+               "November 1950"
+            ],
+            "sm_field_publication_location" : [
+               "New York, N.Y"
+            ],
+            "sm_field_publisher" : [
+               "Freedom Associates"
+            ],
+            "sm_field_title" : [
+               "Freedom, November 1950"
+            ],
+            "sm_language" : [
+               "English"
+            ],
+            "sm_language_code" : [
+               "eng"
+            ],
+            "sm_provider_code" : [
+               "tamwag"
+            ],
+            "sm_provider_identifier" : [
+               "95b6d056-9026-4436-b3a9-4fad9a7a927f"
+            ],
+            "sm_provider_label" : [
+               "The Tamiment Library and Robert F. Wagner Labor Archives"
+            ],
+            "sm_provider_nid" : [
+               "570"
+            ],
+            "sm_publisher" : [
+               "Freedom Associates"
+            ],
+            "sm_subject_label" : [
+               "African Americans -- Civil rights -- United States -- Newspapers",
+               "African Americans -- Economic conditions -- Newspapers",
+               "Civil rights -- United States -- Newspapers",
+               "Civil rights and socialism -- United States -- Newspapers",
+               "African Americans -- Civil rights",
+               "African Americans -- Economic conditions",
+               "Race relations",
+               "United States -- Race relations -- Newspapers",
+               "United States"
+            ],
+            "sm_vid_Terms" : [
+               "African Americans-- Civil rights-- United States-- Newspapers",
+               "African Americans-- Economic conditions-- Newspapers",
+               "Civil rights-- United States-- Newspapers",
+               "Civil rights and socialism-- United States-- Newspapers",
+               "African Americans-- Civil rights",
+               "African Americans-- Economic conditions",
+               "Race relations",
+               "United States-- Race relations-- Newspapers",
+               "United States"
+            ],
+            "spell" : [
+               "Freedom, November 1950",
+               " Title:  Freedom, November 1950 Provider:  The Tamiment Library and Robert F. Wagner Labor Archives PDF:  High resolution Low resolution  The Tamiment Library and Robert F. Wagner Labor Archives The Tamiment Library and Robert F. Wagner Labor Archives Freedom, November 1950 E185.61 .F744 Robeson, Paul, 1898-1976, editorial director. Robeson, Paul, 1898-1976, editorial director. Burnham, Louis E., editor. Burnham, Louis E., editor. Robeson, PaulJr, 1927-2014, contributor. Robeson, PaulJr, 1927-2014, contributor. Freedom Associates 1950-11-01T00:00:00 New York, N.Y African Americans -- Civil rights -- United States -- Newspapers African Americans -- Economic conditions -- Newspapers Civil rights -- United States -- Newspapers Civil rights and socialism -- United States -- Newspapers African Americans -- Civil rights African Americans -- Economic conditions Race relations United States -- Race relations -- Newspapers United States"
+            ],
+            "ss_book_identifier" : "tamwag_fdm000001",
+            "ss_call_number" : "E185.61 .F744",
+            "ss_handle" : "http://hdl.handle.net/2333.1/j9kd55h3",
+            "ss_language" : "en",
+            "ss_longlabel" : "freedom, november 1950",
+            "ss_name" : "0",
+            "ss_name_formatted" : "Anonymous",
+            "ss_pubdate" : "November 1950",
+            "ss_publication_date_text" : "November 1950",
+            "ss_publication_location" : "New York, N.Y",
+            "ss_publocation" : "New York, N.Y",
+            "ss_sauthor" : "robeson, paul, 1898-1976, editorial director.",
+            "ss_spubdate" : "november 1950",
+            "ss_spublocation" : "New York, N.Y",
+            "ss_ssubject" : "african americans -- civil rights -- united states -- newspapers",
+            "ss_title" : "Freedom, November 1950",
+            "ss_title_long" : "Freedom, November 1950",
+            "ss_uri" : "http://sites.dlib.nyu.edu/viewer/books/tamwag_fdm000001/1",
+            "teaser" : " Title:  Freedom, November 1950 Provider:  The Tamiment Library and Robert F. Wagner Labor Archives PDF:  High resolution Low resolution ",
+            "tid" : [
+               3966,
+               3967,
+               3968,
+               3969,
+               3970,
+               3971,
+               3972,
+               3973,
+               3974
+            ],
+            "timestamp" : "2017-02-16T03:14:50.113Z",
+            "tm_vid_3_names" : [
+               "African Americans-- Civil rights-- United States-- Newspapers African Americans-- Economic conditions-- Newspapers Civil rights-- United States-- Newspapers Civil rights and socialism-- United States-- Newspapers African Americans-- Civil rights African Americans-- Economic conditions Race relations United States-- Race relations-- Newspapers United States"
+            ],
+            "tos_name_formatted" : "Anonymous",
+            "url" : "http://sites.dlib.nyu.edu/viewer/books/tamwag_fdm000001",
+            "zm_partner" : [
+               "{\"name\":\"The Tamiment Library and Robert F. Wagner Labor Archives\",\"code\":\"tamwag\",\"nid\":\"570\"}"
+            ],
+            "zm_provider" : [
+               "{\"name\":\"The Tamiment Library and Robert F. Wagner Labor Archives\",\"code\":\"tamwag\",\"nid\":\"570\"}"
+            ],
+            "zm_subject" : [
+               "{\"name\":\"African Americans -- Civil rights -- United States -- Newspapers\",\"tid\":\"3966\",\"vid\":\"3\"}",
+               "{\"name\":\"African Americans -- Economic conditions -- Newspapers\",\"tid\":\"3967\",\"vid\":\"3\"}",
+               "{\"name\":\"Civil rights -- United States -- Newspapers\",\"tid\":\"3968\",\"vid\":\"3\"}",
+               "{\"name\":\"Civil rights and socialism -- United States -- Newspapers\",\"tid\":\"3969\",\"vid\":\"3\"}",
+               "{\"name\":\"African Americans -- Civil rights\",\"tid\":\"3970\",\"vid\":\"3\"}",
+               "{\"name\":\"African Americans -- Economic conditions\",\"tid\":\"3971\",\"vid\":\"3\"}",
+               "{\"name\":\"Race relations\",\"tid\":\"3972\",\"vid\":\"3\"}",
+               "{\"name\":\"United States -- Race relations -- Newspapers\",\"tid\":\"3973\",\"vid\":\"3\"}",
+               "{\"name\":\"United States\",\"tid\":\"3974\",\"vid\":\"3\"}"
+            ]
+         }
+      ],
+      "numFound" : 45,
+      "start" : 0
+   }
+}

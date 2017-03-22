@@ -1,0 +1,397 @@
+{
+   "response" : {
+      "docs" : [
+         {
+            "base_url" : "http://dev-dl-pa.home.nyu.edu/rosie/",
+            "entity_path" : "http://dev-dl-pa.home.nyu.edu/rosie/interviews/idilia-johnston",
+            "entity_title" : "Idilia Johnston",
+            "identifier" : "ROSIE_INTERVIEW_004",
+            "language" : "en",
+            "metadata" : {
+               "camera_metadata" : {
+                  "label" : "Camera Metadata",
+                  "value" : []
+               },
+               "description" : {
+                  "label" : "Description",
+                  "value" : {
+                     "format" : "filtered_html",
+                     "safe_summary" : "<p>Idilia rebelled against her strict father by getting a defense job for the Ohio Crankshaft Company.</p>\n",
+                     "safe_value" : "<p>Born in Cleveland, Ohio, Idilia was the daughter of strict Scottish immigrants. She had no freedom at home and her father did not want her to work. She tells of getting jobs, only to have her father show up at her workplace and physically bring her home. During World War II, Idilia sought out a defense job and got one, working for the Ohio Crankshaft Company. This defense job, from which she could not quit or be fired, allowed her to rebel against her father’s strict rule and live independently for the first time.  Idilia eventually joined the U.S. Navy WAVES.</p>\n",
+                     "summary" : "Idilia rebelled against her strict father by getting a defense job for the Ohio Crankshaft Company. ",
+                     "value" : "Born in Cleveland, Ohio, Idilia was the daughter of strict Scottish immigrants. She had no freedom at home and her father did not want her to work. She tells of getting jobs, only to have her father show up at her workplace and physically bring her home. During World War II, Idilia sought out a defense job and got one, working for the Ohio Crankshaft Company. This defense job, from which she could not quit or be fired, allowed her to rebel against her father’s strict rule and live independently for the first time.  Idilia eventually joined the U.S. Navy WAVES."
+                  }
+               },
+               "handle" : {
+                  "label" : "Citation URL",
+                  "value" : [
+                     "http://hdl.handle.net/2333.1/t4b8gv7h"
+                  ]
+               },
+               "identifier" : {
+                  "label" : "Identifier",
+                  "value" : [
+                     "ROSIE_INTERVIEW_004"
+                  ]
+               },
+               "interview_location" : {
+                  "label" : "Interview Location",
+                  "value" : []
+               },
+               "interviewer" : {
+                  "label" : "Interviewer",
+                  "value" : []
+               },
+               "playlist_ref" : {
+                  "label" : "Playlist",
+                  "value" : {
+                     "changed" : "1304546227",
+                     "cid" : "0",
+                     "comment" : "2",
+                     "comment_count" : "0",
+                     "created" : "1304387856",
+                     "data" : "a:1:{s:7:\"overlay\";i:1;}",
+                     "field_clip_ref" : {
+                        "und" : [
+                           {
+                              "nid" : "849"
+                           },
+                           {
+                              "nid" : "851"
+                           },
+                           {
+                              "nid" : "853"
+                           }
+                        ]
+                     },
+                     "field_identifier" : {
+                        "und" : [
+                           {
+                              "format" : null,
+                              "safe_value" : "4_IDILIA_JOHNSTON_PLAYLIST",
+                              "value" : "4_IDILIA_JOHNSTON_PLAYLIST"
+                           }
+                        ]
+                     },
+                     "field_transcript" : [],
+                     "language" : "und",
+                     "last_comment_name" : null,
+                     "last_comment_timestamp" : "1304387856",
+                     "last_comment_uid" : "1",
+                     "log" : "",
+                     "name" : "rosie_admin",
+                     "nid" : "854",
+                     "picture" : "0",
+                     "promote" : "0",
+                     "rdf_mapping" : {
+                        "body" : {
+                           "predicates" : [
+                              "content:encoded"
+                           ]
+                        },
+                        "changed" : {
+                           "callback" : "date_iso8601",
+                           "datatype" : "xsd:dateTime",
+                           "predicates" : [
+                              "dc:modified"
+                           ]
+                        },
+                        "comment_count" : {
+                           "datatype" : "xsd:integer",
+                           "predicates" : [
+                              "sioc:num_replies"
+                           ]
+                        },
+                        "created" : {
+                           "callback" : "date_iso8601",
+                           "datatype" : "xsd:dateTime",
+                           "predicates" : [
+                              "dc:date",
+                              "dc:created"
+                           ]
+                        },
+                        "last_activity" : {
+                           "callback" : "date_iso8601",
+                           "datatype" : "xsd:dateTime",
+                           "predicates" : [
+                              "sioc:last_activity_date"
+                           ]
+                        },
+                        "name" : {
+                           "predicates" : [
+                              "foaf:name"
+                           ]
+                        },
+                        "rdftype" : [
+                           "sioc:Item",
+                           "foaf:Document"
+                        ],
+                        "title" : {
+                           "predicates" : [
+                              "dc:title"
+                           ]
+                        },
+                        "uid" : {
+                           "predicates" : [
+                              "sioc:has_creator"
+                           ],
+                           "type" : "rel"
+                        }
+                     },
+                     "revision_timestamp" : "1304546227",
+                     "revision_uid" : "3",
+                     "status" : "1",
+                     "sticky" : "1",
+                     "title" : "Idilia  Johnston Interview Playlist",
+                     "tnid" : "0",
+                     "translate" : "0",
+                     "type" : "dlts_playlist",
+                     "uid" : "1",
+                     "vid" : "854"
+                  }
+               },
+               "rosie_ackknowledgements" : {
+                  "label" : "Acknowledgements",
+                  "value" : [
+                     "This interview was made possible by the generous support of Jack and Valerie Rowe."
+                  ]
+               },
+               "rosie_representative_image" : {
+                  "label" : "Representative Image",
+                  "value" : [
+                     "http://dev-dl-pa.home.nyu.edu/rosie/sites/dlib.nyu.edu.rosie/files/representative_images/4_IDILIA_JOHNSTON.jpg"
+                  ]
+               },
+               "rosie_subject_name" : {
+                  "label" : "Subject name",
+                  "value" : [
+                     {
+                        "credentials" : "",
+                        "family" : "Johnston",
+                        "generational" : "",
+                        "given" : "Idilia",
+                        "middle" : "",
+                        "safe" : {
+                           "credentials" : "",
+                           "family" : "Johnston",
+                           "generational" : "",
+                           "given" : "Idilia",
+                           "middle" : "",
+                           "title" : ""
+                        },
+                        "title" : ""
+                     }
+                  ]
+               },
+               "total_running_time" : {
+                  "label" : "Total Running Time",
+                  "value" : []
+               },
+               "transcript" : {
+                  "label" : "Transcript",
+                  "value" : [
+                     "http://dev-dl-pa.home.nyu.edu/rosie/sites/dlib.nyu.edu.rosie/files/transcripts/4_Idilia_Johnston.pdf"
+                  ]
+               }
+            },
+            "representative_image" : {
+               "dlts_solr_thumb" : "http://dev-dl-pa.home.nyu.edu/rosie/sites/dlib.nyu.edu.rosie/files/styles/dlts_solr_thumb/public/representative_images/4_IDILIA_JOHNSTON.jpg?itok=yeELH4Ha",
+               "large" : "http://dev-dl-pa.home.nyu.edu/rosie/sites/dlib.nyu.edu.rosie/files/styles/large/public/representative_images/4_IDILIA_JOHNSTON.jpg?itok=hEasdXSU",
+               "medium" : "http://dev-dl-pa.home.nyu.edu/rosie/sites/dlib.nyu.edu.rosie/files/styles/medium/public/representative_images/4_IDILIA_JOHNSTON.jpg?itok=p-OF3JAo",
+               "thumbnail" : "http://dev-dl-pa.home.nyu.edu/rosie/sites/dlib.nyu.edu.rosie/files/styles/thumbnail/public/representative_images/4_IDILIA_JOHNSTON.jpg?itok=tDnH9hWA",
+               "video_lg_thumbnails" : "http://dev-dl-pa.home.nyu.edu/rosie/sites/dlib.nyu.edu.rosie/files/styles/video_lg_thumbnails/public/representative_images/4_IDILIA_JOHNSTON.jpg?itok=MyWvKPyt",
+               "video_player_background" : "http://dev-dl-pa.home.nyu.edu/rosie/sites/dlib.nyu.edu.rosie/files/styles/video_player_background/public/representative_images/4_IDILIA_JOHNSTON.jpg?itok=AqVrzbgJ",
+               "video_sm_thumbnails" : "http://dev-dl-pa.home.nyu.edu/rosie/sites/dlib.nyu.edu.rosie/files/styles/video_sm_thumbnails/public/representative_images/4_IDILIA_JOHNSTON.jpg?itok=zMBSWqzs"
+            },
+            "status" : "1",
+            "type" : "video"
+         },
+         {
+            "base_url" : "http://dlib.nyu.edu/themasses/",
+            "entity_language" : "en",
+            "entity_path" : "http://dlib.nyu.edu/themasses/books/masses001/1",
+            "entity_status" : "1",
+            "entity_title" : "Masses (masses001)",
+            "entity_type" : "dlts_book",
+            "identifier" : "masses001",
+            "metadata" : {
+               "author" : {
+                  "label" : "Author",
+                  "value" : []
+               },
+               "binding_orientation" : {
+                  "label" : "Binding Orientation",
+                  "value" : [
+                     "Vertical"
+                  ]
+               },
+               "call_number" : {
+                  "label" : "Call Number",
+                  "value" : [
+                     "HX1 .M2"
+                  ]
+               },
+               "contributor" : {
+                  "label" : "Contributor",
+                  "value" : []
+               },
+               "creator" : {
+                  "label" : "Creator",
+                  "value" : []
+               },
+               "description" : {
+                  "label" : "Description",
+                  "value" : [
+                     "Vol. 1, No. 1, January 1911"
+                  ]
+               },
+               "dimensions" : {
+                  "label" : "Dimensions",
+                  "value" : [
+                     "27 cm x 34.5 cm"
+                  ]
+               },
+               "editor" : {
+                  "label" : "Editor",
+                  "value" : [
+                     "Thomas Seltzer, Jan.-Apr. 1911",
+                     "Horatio Winslow, May-Dec. 1911  ",
+                     "Piet Vlag, Jan.-Aug. 1912",
+                     "Max Eastman, Dec. 1912-1917"
+                  ]
+               },
+               "handle" : {
+                  "label" : "Handle",
+                  "value" : [
+                     "http://hdl.handle.net/2333.1/7m0cfzv2"
+                  ]
+               },
+               "identifier" : {
+                  "label" : "Identifier",
+                  "value" : [
+                     "masses001"
+                  ]
+               },
+               "isbn" : {
+                  "label" : "ISBN",
+                  "value" : []
+               },
+               "language" : {
+                  "label" : "Language",
+                  "value" : [
+                     "English"
+                  ]
+               },
+               "language_code" : {
+                  "label" : "Language Code",
+                  "value" : [
+                     "Eng"
+                  ]
+               },
+               "number" : {
+                  "label" : "Number",
+                  "value" : [
+                     "1"
+                  ]
+               },
+               "ocr_text" : {
+                  "label" : "OCR Text",
+                  "value" : []
+               },
+               "other_version" : {
+                  "label" : "Other Version",
+                  "value" : []
+               },
+               "page_count" : {
+                  "label" : "Page Count",
+                  "value" : [
+                     "16"
+                  ]
+               },
+               "pdf_file" : {
+                  "label" : "PDF",
+                  "value" : [
+                     "http://dlib.nyu.edu/themasses/sites/dlib.nyu.edu.themasses/files/masses001_hi.pdf",
+                     "http://dlib.nyu.edu/themasses/sites/dlib.nyu.edu.themasses/files/masses001_lo.pdf"
+                  ]
+               },
+               "publication_date" : {
+                  "label" : "Publication Date",
+                  "value" : [
+                     "http://dlib.nyu.edu/themasses/sites/dlib.nyu.edu.themasses/files/masses001_hi.pdf",
+                     "http://dlib.nyu.edu/themasses/sites/dlib.nyu.edu.themasses/files/masses001_lo.pdf"
+                  ]
+               },
+               "publisher" : {
+                  "label" : "Publisher",
+                  "value" : [
+                     "New York: The Masses Publishing Co."
+                  ]
+               },
+               "read_order" : {
+                  "label" : "Read Order",
+                  "value" : [
+                     "Left to right"
+                  ]
+               },
+               "representative_image" : {
+                  "label" : "Representative Image",
+                  "value" : [
+                     "http://dlib.nyu.edu/themasses/sites/dlib.nyu.edu.themasses/files/masses001_thumb.jpg"
+                  ]
+               },
+               "scan_date" : {
+                  "label" : "Scan Date",
+                  "value" : [
+                     "http://dlib.nyu.edu/themasses/sites/dlib.nyu.edu.themasses/files/masses001_thumb.jpg"
+                  ]
+               },
+               "scan_order" : {
+                  "label" : "Scan Order",
+                  "value" : [
+                     "Left to right"
+                  ]
+               },
+               "scanning_notes" : {
+                  "label" : "Scanning Notes",
+                  "value" : []
+               },
+               "sequence_count" : {
+                  "label" : "Sequence Count",
+                  "value" : [
+                     "20"
+                  ]
+               },
+               "subject" : {
+                  "label" : "Subject",
+                  "value" : [
+                     "Socialism",
+                     "Radicalism",
+                     "Periodicals"
+                  ]
+               },
+               "subtitle" : {
+                  "label" : "Subtitle",
+                  "value" : [
+                     "A Monthly Magazine Devoted to the Interests of the Working People"
+                  ]
+               },
+               "title" : {
+                  "label" : "Book Title",
+                  "value" : [
+                     "The Masses (masses001)"
+                  ]
+               },
+               "volume" : {
+                  "label" : "Volume",
+                  "value" : [
+                     "1"
+                  ]
+               }
+            }
+         }
+      ],
+      "numFound" : "79",
+      "start" : 0
+   }
+}
