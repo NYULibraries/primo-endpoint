@@ -24,6 +24,20 @@ Usage: primo-endpoint [OPTION...]
   -v        --verbose            Log collection refreshes to stdout
 ```
 
+### Config
+
+See `config.yml`.  Each collection can have one of the following source values to specify the endpoint to pull from.
+
+* FDA: `https://archive.nyu.edu/rest/collections/$id`
+  requires `id` (internal) or `hdl` (suffix)
+* DLTS: `http://discovery.dlib.nyu.edu:8080/solr3_discovery/$core/select`
+  requires `core` (`core` (none), `viewer`, or `nyupress`) and `code` (collection code)
+* DLib: `http://dlib.nyu.edu/$path`
+  requires `path`
+* SDR: `https://geo.nyu.edu/catalog`
+* SpecialCollections: `https://specialcollections.library.nyu.edu/search/catalog.json`
+  requires `filters` object mapping field to value
+
 ## Reference data:
 
 * [Endpoint Primo now uses to collect metadata](https://ichabod.library.nyu.edu/catalog.json?page=2)
