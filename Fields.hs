@@ -26,23 +26,24 @@ import           Document
 
 -- |A 'Value' generator for a single metadata field
 data Generator
-  = GeneratorString T.Text
-  | GeneratorField T.Text
+  = GeneratorString T.Text -- ^fixed text value
+  | GeneratorField T.Text -- ^copy input field
   | GeneratorMap
-    { _generatorMap :: Value -> Value
+    { _generatorMap :: Value -> Value -- ^apply this function to the resulting value
     , _generator :: Generator
     }
-  | GeneratorList [Generator]
-  | GeneratorPaste [Generator] -- cross-product
+  | GeneratorList [Generator] -- ^concatenate (`mconcat`) all the values
+  | GeneratorPaste [Generator] -- ^join (`T.concat`) all the values, producing the cross-product
   | GeneratorOr
     { _generator :: Generator
-    , _generatorOr :: Generator -- if generator is empty
+    , _generatorOr :: Generator -- ^use if generator produces the empty value
     }
   | GeneratorWith
-    { _generatorWith :: HMap.HashMap T.Text Generator -- local variables
+    { _generatorWith :: HMap.HashMap T.Text Generator -- ^assign local variables to replace input
     , _generator :: Generator
     }
 
+-- |Merge generators using 'GeneratorList'
 instance Monoid Generator where
   mempty = GeneratorList []
   mappend (GeneratorList a) (GeneratorList b) = GeneratorList (a <> b)
@@ -52,9 +53,9 @@ instance Monoid Generator where
 -- |Generate a single 'Value' given a set of input metadata values and a field 'Generator'
 generate :: Metadata -> Generator -> Value
 generate _ (GeneratorString x) = value x
-generate m (GeneratorList l) = foldMap (generate m) l
 generate m (GeneratorField f) = HMap.lookupDefault mempty f m
 generate m (GeneratorMap f g) = f $ generate m g
+generate m (GeneratorList l) = foldMap (generate m) l
 generate m (GeneratorOr g d) = generate m g `valueOr` generate m d
 generate _ (GeneratorPaste []) = value T.empty
 generate m (GeneratorPaste [x]) = generate m x
@@ -90,6 +91,7 @@ generateFields g m = HMap.map (generate m) g
 generatorsFields :: Generators -> HSet.HashSet T.Text
 generatorsFields = foldMap generatorFields
 
+-- |Parse a single field from a JSON object as a generator
 parseGeneratorKey :: Generators -> T.Text -> JSON.Value -> JSON.Parser Generator
 parseGeneratorKey _ "field" v =
   JSON.withText "field name" (return . GeneratorField) v
@@ -98,11 +100,13 @@ parseGeneratorKey _ "string" v =
 parseGeneratorKey g "paste" v =
   JSON.withArray "paste components" (fmap GeneratorPaste . mapM (parseGenerator g) . V.toList) v
 parseGeneratorKey g "value" v = parseGenerator g v
-parseGeneratorKey g k JSON.Null | Just m <- HMap.lookup k g = return m
-parseGeneratorKey g k v | Just m <- HMap.lookup k g =
+parseGeneratorKey g k JSON.Null | Just m <- HMap.lookup k g = return m -- macro with no arguments
+parseGeneratorKey g k v | Just m <- HMap.lookup k g = -- macro with arguments
   JSON.withObject "generator arguments" (fmap (`GeneratorWith` m) . mapM (parseGenerator $ HMap.delete k g)) v
 parseGeneratorKey _ k _ = fail $ "Unknown field generator: " ++ show k
 
+-- |Parse a JSON object as a generator
+-- Some fields are handled specially (handlers), while the rest are passed to 'parseGeneratorKey' and merged.
 parseGeneratorObject :: Generators -> JSON.Object -> JSON.Parser Generator
 parseGeneratorObject g = run handlers where
   run [] o = foldMapM (uncurry $ parseGeneratorKey g) (HMap.toList o)
@@ -118,9 +122,10 @@ parseGeneratorObject g = run handlers where
     ]
   gmap h j x = flip GeneratorMap x . h <$> JSON.parseJSON j
 
+-- |Parse a generator, given the macros in scope
 parseGenerator :: Generators -> JSON.Value -> JSON.Parser Generator
 parseGenerator _ (JSON.String f)
-  | Just (h, _) <- T.uncons f
+  | Just (h, _) <- T.uncons f -- heuristics for valid field names
   , isAlpha h || h == '_' = return $ GeneratorField f
 parseGenerator _ (JSON.String s) = return $ GeneratorString s
 parseGenerator _ JSON.Null = return $ mempty

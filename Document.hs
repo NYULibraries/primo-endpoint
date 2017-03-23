@@ -45,6 +45,7 @@ oneValue :: Monad m => Value -> m T.Text
 oneValue (Value [v]) = return v
 oneValue v = fail $ "expecting single value: " ++ show v
 
+-- |Values can be parsed from any JSON type except objects
 instance JSON.FromJSON Value where
   parseJSON (JSON.String t) = return $ value t
   parseJSON (JSON.Number a) = return $ value $ T.pack $ show a
@@ -53,13 +54,16 @@ instance JSON.FromJSON Value where
   parseJSON (JSON.Array a) = Value . concatMap values <$> mapM JSON.parseJSON a
   parseJSON v = JSON.typeMismatch "Value" v
 
--- |Empty for unparsable values (i.e., objects)
+-- |A more permissive (total) parser for Values that produces empty for unparsable values (i.e., objects)
 parseValue :: JSON.Value -> Value
 parseValue = fold . JSON.parseMaybe JSON.parseJSON
 
+-- |When outputing values, they're always an array of strings
 instance JSON.ToJSON Value where
   toJSON (Value l) = JSON.Array $ V.fromList $ map JSON.String l
 
+-- |Value has a canonical time representation that we can parse from strings:
+-- the prefix of @%Y-%m-%dT%H:%M:%S%QZ@ only including fields with parsed values.
 instance ParseTime Value where
 #if MIN_VERSION_time(1,6,0)
   buildTime _ [] = Just $ Value []
@@ -91,13 +95,16 @@ valueJSON = fmap JSON.toJSON . maybeValue
 
 -- |The alternative monoid append, left-biased
 valueOr :: Value -> Value -> Value
-valueOr a b = fromMaybe b $ maybeValue a
+valueOr (Value []) a = a
+valueOr a _ = a
 
 type Metadata = HMap.HashMap T.Text Value
 
+-- |Lookup a single field value, or the empty value if missing
 getMetadata :: Metadata -> T.Text -> Value
 getMetadata m k = fold $ HMap.lookup k m
 
+-- |Add a field value, appending it to any existing value
 addMetadata :: Metadata -> T.Text -> Value -> Metadata
 addMetadata m k v = HMap.insertWith (flip mappend) k v m
 
@@ -126,6 +133,7 @@ instance JSON.FromJSON Document where
       , documentMetadata = m
       }
 
+-- |Update the metadata within a document
 mapMetadata :: (Metadata -> Metadata) -> Document -> Document
 mapMetadata f d = d{ documentMetadata = f $ documentMetadata d }
 
