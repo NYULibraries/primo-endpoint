@@ -57,14 +57,12 @@ _guessLocalTime l = unsafePerformIO $ do
 parseFDA :: T.Text -> JSON.Value -> JSON.Parser Documents
 parseFDA name = withArrayOrSingleton $ mapM $ JSON.withObject "FDA item" $ \obj -> do
   FDAHandle hdl0 hdl1 <- obj JSON..: "handle"
-  -- mtime <- obj JSON..: "lastModified"
+  -- mtime <- _guessLocalTime <$> obj JSON..: "lastModified"
   metadata <- readMetadata =<< obj JSON..: "metadata"
-  return Document
-    { documentID = "fda:hdl-handle-net-" <> (T.pack $ show hdl0) <> "-" <> (T.pack $ show hdl1)
-    , documentCollection = name
-    -- , documentModified = _guessLocalTime mtime
-    , documentMetadata = metadata
-    }
+  return $ mkDocument
+    ("fda:hdl-handle-net-" <> (T.pack $ show hdl0) <> "-" <> (T.pack $ show hdl1))
+    name
+    metadata
   where
   readField = JSON.withObject "FDA.metadata.field" $ \o ->
     (,) <$> o JSON..: "key" <*> o JSON..: "value"

@@ -132,7 +132,11 @@ parseCollection env key = JSON.withObject "collection" $ \o -> do
     , collectionSource = s
     , collectionInterval = fromMaybe (configInterval $ envPreConfig env) i
     , collectionName = n
-    , collectionFields = fixLanguage (envISO639 env) $ f <> t
+    , collectionFields =
+      HMap.insert "id" (fieldGenerator "id")
+      $ HMap.insert "collection" (fieldGenerator "collection")
+      $ fixLanguage (envISO639 env)
+      $ f <> t
     , collectionVerbose = envVerbose env
     }
   where
@@ -195,7 +199,7 @@ lookupCollection _ _ = Nothing
 
 loadCollection :: Collection -> Either Collections (IO Documents)
 loadCollection Collection{..} =
-  fmap (V.map $ mapMetadata $ generateFields collectionFields) <$> loadSource collectionSource where
+  fmap (V.map $ generateFields collectionFields) <$> loadSource collectionSource where
   loadSource (SourceCollections l) = Left l
   loadSource (SourceFDA i) = Right $ loadFDA i
   loadSource (SourceDLTS c i) = Right $ loadDLTS (last collectionKey) collectionName c i fl

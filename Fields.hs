@@ -3,6 +3,7 @@
 {-# LANGUAGE TypeSynonymInstances #-}
 module Fields
   ( Generators
+  , fieldGenerator
   , generateFields
   , generatorsFields
   , parseGenerators
@@ -16,6 +17,7 @@ import qualified Data.HashMap.Strict as HMap
 import qualified Data.HashSet as HSet
 import           Data.Maybe (fromMaybe)
 import           Data.Monoid ((<>))
+import           Data.String (IsString(..))
 import qualified Data.Text as T
 import           Data.Time.Format (parseTimeM, defaultTimeLocale)
 import qualified Data.Vector as V
@@ -42,6 +44,13 @@ data Generator
     { _generatorWith :: HMap.HashMap T.Text Generator -- ^assign local variables to replace input
     , _generator :: Generator
     }
+
+-- |Generate a static string
+instance IsString Generator where
+  fromString = GeneratorString . fromString
+
+fieldGenerator :: T.Text -> Generator
+fieldGenerator = GeneratorField
 
 -- |Merge generators using 'GeneratorList'
 instance Monoid Generator where

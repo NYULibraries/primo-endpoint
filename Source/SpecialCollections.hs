@@ -21,14 +21,12 @@ parseSC :: Monad m => T.Text -> Metadata -> m Document
 parseSC key m = do
   r <- splid <$> oneValue (getMetadata m "ref_ssi")
   c <- oneValue (getMetadata m "collection_ssm")
-  return Document
-    { documentID = key <> T.cons ':' (key <> r)
-    , documentCollection = c
-    , documentMetadata =
-        HMap.insert "_ref_ssi" (value r)
+  return $ mkDocument
+    (key <> T.cons ':' (key <> r))
+    c
+    (HMap.insert "_ref_ssi" (value r)
       $ HMap.insert "_parent_ssm" (mapValues splid $ getMetadata m "parent_ssm")
-      $ m
-    }
+      m)
   where
   -- woj items have ids like "wojaspace_ref13" and we want "ref13"
   -- no idea if this generalizes across collections

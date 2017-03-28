@@ -35,6 +35,7 @@ executable primo-endpoint
     Source.DLib
     Source.SDR
     Source.SpecialCollections
+    Output.Primo
     Server
     View
   default-language:    Haskell2010
@@ -50,7 +51,7 @@ executable primo-endpoint
     text,
     unordered-containers,
     vector,
-    aeson,
+    aeson >= 1,
     blaze-html,
     connection,
     network-uri,

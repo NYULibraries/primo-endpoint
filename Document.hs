@@ -9,20 +9,23 @@ module Document
   , value
   , oneValue
   , parseValue
+  , valueJSON
+  , keyValueJSON
+  , valueJSON'
+  , keyValueJSON'
   , valueOr
   , Metadata
   , getMetadata
   , addMetadata
-  , Document(..)
-  , mapMetadata
+  , Document
+  , mkDocument
   , Documents
   , handleToID
   ) where
 
 import qualified Data.Aeson.Types as JSON
 import qualified Data.HashMap.Strict as HMap
-import           Data.Foldable (fold, foldlM)
-import           Data.Maybe (fromMaybe, mapMaybe)
+import           Data.Foldable (fold)
 import           Data.Monoid ((<>))
 import qualified Data.Text as T
 import           Data.Time.Clock (UTCTime)
@@ -45,6 +48,16 @@ oneValue :: Monad m => Value -> m T.Text
 oneValue (Value [v]) = return v
 oneValue v = fail $ "expecting single value: " ++ show v
 
+-- |Nothing for empty values
+maybeValue :: Value -> Maybe Value
+maybeValue (Value []) = Nothing
+maybeValue v = Just v
+
+-- |The alternative monoid append, left-biased
+valueOr :: Value -> Value -> Value
+valueOr (Value []) a = a
+valueOr a _ = a
+
 -- |Values can be parsed from any JSON type except objects
 instance JSON.FromJSON Value where
   parseJSON (JSON.String t) = return $ value t
@@ -61,6 +74,25 @@ parseValue = fold . JSON.parseMaybe JSON.parseJSON
 -- |When outputing values, they're always an array of strings
 instance JSON.ToJSON Value where
   toJSON (Value l) = JSON.Array $ V.fromList $ map JSON.String l
+  toEncoding (Value l) = JSON.foldable l
+
+-- |'JSON.toJSON' for non-empty values
+valueJSON :: Value -> Maybe JSON.Value
+valueJSON = fmap JSON.toJSON . maybeValue
+
+-- |'JSON..=' for non-empty values
+keyValueJSON :: (Monoid kv, JSON.KeyValue kv) => T.Text -> Value -> kv
+keyValueJSON k = foldMap (k JSON..=) . maybeValue
+
+-- |'valueJSON' but single values as scalars
+valueJSON' :: Value -> Maybe JSON.Value
+valueJSON' (Value [v]) = Just $ JSON.String v
+valueJSON' v = valueJSON v
+
+-- |'keyValueJSON' but single values as scalars
+keyValueJSON' :: (Monoid kv, JSON.KeyValue kv) => T.Text -> Value -> kv
+keyValueJSON' k (Value [v]) = k JSON..= v
+keyValueJSON' k v = keyValueJSON k v
 
 -- |Value has a canonical time representation that we can parse from strings:
 -- the prefix of @%Y-%m-%dT%H:%M:%S%QZ@ only including fields with parsed values.
@@ -84,20 +116,6 @@ instance ParseTime Value where
       | any (`elem` c) (s :: String) = f
       | otherwise = ""
 
--- |Nothing for empty values
-maybeValue :: Value -> Maybe Value
-maybeValue (Value []) = Nothing
-maybeValue v = Just v
-
--- |JSON for non-empty values
-valueJSON :: Value -> Maybe JSON.Value
-valueJSON = fmap JSON.toJSON . maybeValue
-
--- |The alternative monoid append, left-biased
-valueOr :: Value -> Value -> Value
-valueOr (Value []) a = a
-valueOr a _ = a
-
 type Metadata = HMap.HashMap T.Text Value
 
 -- |Lookup a single field value, or the empty value if missing
@@ -108,36 +126,11 @@ getMetadata m k = fold $ HMap.lookup k m
 addMetadata :: Metadata -> T.Text -> Value -> Metadata
 addMetadata m k v = HMap.insertWith (flip mappend) k v m
 
-data Document = Document
-  { documentID :: T.Text
-  , documentCollection :: T.Text
-  -- , documentModified :: UTCTime
-  , documentMetadata :: Metadata
-  } deriving (Show)
-
-instance JSON.ToJSON Document where
-  toJSON Document{..} = JSON.Object
-    $ HMap.insert "id" (JSON.String documentID)
-    $ HMap.insert "collection_ssm" (JSON.String documentCollection)
-    $ HMap.fromList $ mapMaybe (\(k, v) -> (,) ("desc_metadata__" <> k <> "_tesim") <$> valueJSON v) $ HMap.toList documentMetadata
-
-instance JSON.FromJSON Document where
-  parseJSON = JSON.withObject "document" $ \o -> do
-    i <- o JSON..: "id"
-    c <- o JSON..: "collection_ssm"
-    m <- foldlM (\m (k, v) -> maybe (return m) (\k' -> addMetadata m k' <$> JSON.parseJSON v)
-      $ T.stripSuffix "_tesim" =<< T.stripPrefix "desc_metadata__" k) HMap.empty $ HMap.toList o
-    return Document
-      { documentID = i
-      , documentCollection = c
-      , documentMetadata = m
-      }
-
--- |Update the metadata within a document
-mapMetadata :: (Metadata -> Metadata) -> Document -> Document
-mapMetadata f d = d{ documentMetadata = f $ documentMetadata d }
-
+type Document = Metadata
 type Documents = V.Vector Document
+
+mkDocument :: T.Text -> T.Text -> Metadata -> Document
+mkDocument i c = HMap.insert "id" (value i) . HMap.insert "collection" (value c)
 
 -- |Convert a handle URL like @http://hdl.handle.net/x/y@ to a 'documentID' like @hdl-handle-net-x-y@.
 handleToID :: Monad m => Value -> m T.Text

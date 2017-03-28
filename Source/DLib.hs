@@ -24,11 +24,10 @@ parseDLib pfx name o = do
   let tm = t <> m
   _hdl <- handleToID $ getMetadata tm "handle"
   i <- o JSON..: "identifier"
-  return Document
-    { documentID = pfx <> T.cons ':' i -- _hdl
-    , documentCollection = name
-    , documentMetadata = tm
-    }
+  return $ mkDocument
+    (pfx <> T.cons ':' i) -- _hdl
+    name
+    tm
   where
   pm v = pv <$> JSON.withObject "dlib metadata" (JSON..: "value") v
   pv (JSON.Object v) = foldMap parseValue $ HMap.lookup "value" v

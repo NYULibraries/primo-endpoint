@@ -16,11 +16,10 @@ sdrRequest = HTTP.parseRequest_ "https://geo.nyu.edu/catalog"
 parseSDR :: Monad m => Metadata -> m Document
 parseSDR m = do
   i <- handleToID $ getMetadata m "dc_identifier_s"
-  return Document
-    { documentID = "sdr:" <> i
-    , documentCollection = "Spatial Data Repository"
-    , documentMetadata = m
-    }
+  return $ mkDocument
+    ("sdr:" <> i)
+    "Spatial Data Repository"
+    m
 
 loadSDR :: IO Documents
 loadSDR =

@@ -57,9 +57,7 @@ loadDLTS pfx name core c fl = parseM (mapM doc) =<< loadSolr dltsRequest (TE.enc
     cl <- oneValue =<< o JSON..: dltsCollectionName
     -- mtime <- o JSON..: dltsChanged
     o' <- mapM JSON.parseJSON o
-    return Document
-      { documentID = pfx <> T.cons ':' (fromMaybe hdl $ guard (core == NYUPress) >> i)
-      , documentCollection = fromMaybe cl name
-      -- , documentModified = mtime
-      , documentMetadata = o'
-      }
+    return $ mkDocument
+      (pfx <> T.cons ':' (fromMaybe hdl $ guard (core == NYUPress) >> i))
+      (fromMaybe cl name)
+      o'

@@ -34,12 +34,11 @@ htmlValue (Value [s])
 htmlValue (Value l) = H.ol $ foldMap (H.li . htmlValue . value) l
 
 htmlDocument :: Document -> H.Html
-htmlDocument Document{..} =
-  H.h3 (H.text documentID)
+htmlDocument m =
+  H.h3 (htmlValue $ getMetadata m "id")
   <> H.dl
-    (H.dt "collection" <> H.dd (H.text documentCollection)
-    <> HMap.foldrWithKey (\k v -> mappend $ H.dt (H.text k) <> H.dd (htmlValue v))
-      mempty documentMetadata)
+    (HMap.foldrWithKey (\k v -> mappend $ H.dt (H.text k) <> H.dd (htmlValue v))
+      mempty m)
 
 htmlDocuments :: Documents -> H.Html
 htmlDocuments = foldMap htmlDocument

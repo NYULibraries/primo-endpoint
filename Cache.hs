@@ -10,7 +10,7 @@ import           Control.Exception (bracketOnError, try, SomeException)
 import           Control.Exception (displayException)
 #endif
 import           Control.Monad (liftM2, when)
-import qualified Data.Aeson as JSON
+import qualified Data.ByteString.Builder as BSB
 import qualified Data.ByteString.Lazy.Char8 as BSLC
 import           Data.Monoid (Any(..))
 import qualified Data.Text as T
@@ -21,6 +21,7 @@ import           System.IO (Handle, IOMode(ReadMode), SeekMode(AbsoluteSeek), st
 
 import           Util
 import           Config
+import           Output.Primo
 
 #if !MIN_VERSION_base(4,8,0)
 displayException :: Exception e => e -> String
@@ -62,9 +63,9 @@ updateCollection c@Collection{ collectionCache = f } force t = do
   m <- getModificationTime0 f
   let uc = force || diffUTCTime t m >= collectionInterval c
   u <- case loadCollection c of
-    Left l | uc ->
+    Left l | uc -> -- meta-collection: load children
       getAny <$> foldMapM (\c' -> Any . (m <) <$> updateCollection c' force t) l
-    _ -> return uc
+    _ -> return uc -- don't actually load a real collection
   if not u then return m else do
     when (collectionVerbose c) $ putStrLn $ "updating " ++ cis
     d <- either (return . Right . Left) (try . fmap Right) $ loadCollection c
@@ -86,7 +87,7 @@ updateCollection c@Collection{ collectionCache = f } force t = do
           hPutChar h ']'
           hSeek h AbsoluteSeek 0
           hPutChar h '[')
-        (BSLC.hPut h . JSON.encode))
+        (BSB.hPutBuilder h . outputPrimo))
       d
     if r then getModificationTime0 f else return m
   where
