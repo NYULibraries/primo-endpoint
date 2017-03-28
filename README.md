@@ -26,7 +26,11 @@ Usage: primo-endpoint [OPTION...]
 
 ### Config
 
-See `config.yml`.  Each collection can have one of the following source values to specify the endpoint to pull from.
+See `config.yml`.
+
+#### Sources
+
+Each collection can have one of the following source values to specify the endpoint to pull from:
 
 * FDA: `https://archive.nyu.edu/rest/collections/$id`
   requires `id` (internal) or `hdl` (suffix)
@@ -37,6 +41,29 @@ See `config.yml`.  Each collection can have one of the following source values t
 * SDR: `https://geo.nyu.edu/catalog`
 * SpecialCollections: `https://specialcollections.library.nyu.edu/search/catalog.json`
   requires `filters` object mapping field to value
+
+#### Fields
+
+Field definitions are made up of the following:
+
+* Object with one or more key-value pairs, applied in the following order (highest to lowest precedence):
+    * Single fields, which are processed independently and then combined (as if in an array):
+        * `field`: name of source field to copy
+        * `string`: string literal to create single value
+        * `paste`: list of definitions, the resulting strings are pasted together (no delimiter) as a cross-product (so the number of resulting values is the product of the number of values from each element)
+        * `handle`: definition. Convert a string of the form "http://hdl.handle.net/XXX/YYY.ZZZ" to "hdl-handle-net-XXX-YYY-ZZZ".  Any non-matching input is discarded.
+        * `value`: any definition (for convenient nesting)
+        * generator name: key-definition arguments as object. Substitutes a generator "macro" from the generator section, assigning the given keys to their corresponding values as input fields to the macro.  The generator can also see any other input fields as well.
+    * Post-processors that first process the rest of the definition, and then apply a transformation on the result:
+        * `date`: string [strptime format](http://hackage.haskell.org/package/time/docs/Data-Time-Format.html).  Tries to parse each value in the result with the given format and produces a timestamp in standard format (relevant prefix of "%Y-%m-%dT%H:%M:%S%QZ") as output. Any inputs that cannot be parsed are discarded.
+	* `lookup`: key-definition lookup table as object. Applies the lookup table translation to each input, substituting the right-side definition for any matching left-side key. If no key matches, the input is discarded.
+	* `limit`: integer. Take only the first *n* values from the input, discarding the rest.
+	* `default`: definition. If there are no produced input values, provide the definition instead.
+	* `join`: string literal delimiter. Paste all the inputs together, separated by the given delimiter.  Always produces exactly one output.
+* Array: all produced values are merged, producing the sum of all the input values.
+* String literal starting with letter or "\_": same as `field`
+* Any other string literal: same as `string`
+* Null: same as empty array (produces 0 values)
 
 ## Reference data:
 
