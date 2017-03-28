@@ -133,8 +133,8 @@ mkDocument :: T.Text -> T.Text -> Metadata -> Document
 mkDocument i c = HMap.insert "id" (value i) . HMap.insert "collection" (value c)
 
 -- |Convert a handle URL like @http://hdl.handle.net/x/y@ to a 'documentID' like @hdl-handle-net-x-y@.
-handleToID :: Monad m => Value -> m T.Text
-handleToID (Value [T.stripPrefix "http://hdl.handle.net/" -> Just h]) = return $ "hdl-handle-net-" <> T.map f h where
+handleToID :: Monad m => T.Text -> m T.Text
+handleToID (T.stripPrefix "http://hdl.handle.net/" -> Just h) = return $ "hdl-handle-net-" <> T.map f h where
   f '.' = '-'
   f '/' = '-'
   f '\\' = '-'

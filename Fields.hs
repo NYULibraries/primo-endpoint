@@ -108,6 +108,8 @@ parseGeneratorKey _ "string" v =
   JSON.withText "string literal" (return . GeneratorString) v
 parseGeneratorKey g "paste" v =
   JSON.withArray "paste components" (fmap GeneratorPaste . mapM (parseGenerator g) . V.toList) v
+parseGeneratorKey g "handle" v =
+  GeneratorMap (Value . foldMap handleToID . values) <$> parseGenerator g v
 parseGeneratorKey g "value" v = parseGenerator g v
 parseGeneratorKey g k JSON.Null | Just m <- HMap.lookup k g = return m -- macro with no arguments
 parseGeneratorKey g k v | Just m <- HMap.lookup k g = -- macro with arguments

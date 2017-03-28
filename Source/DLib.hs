@@ -22,7 +22,7 @@ parseDLib pfx name o = do
   let t = parseValue <$> HMap.delete "metadata" o
   m <- mapM pm =<< o JSON..: "metadata"
   let tm = t <> m
-  _hdl <- handleToID $ getMetadata tm "handle"
+  _hdl <- handleToID =<< oneValue (getMetadata tm "handle")
   i <- o JSON..: "identifier"
   return $ mkDocument
     (pfx <> T.cons ':' i) -- _hdl
