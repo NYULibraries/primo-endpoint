@@ -12,7 +12,7 @@ module Config
   ) where
 
 import           Control.Arrow ((***))
-import           Control.Monad (guard, liftM2)
+import           Control.Monad (guard, when, liftM2)
 import           Control.Monad.Trans.Maybe (MaybeT(..))
 import qualified Data.Aeson.Types as JSON
 import qualified Data.ByteString as BS
@@ -193,15 +193,19 @@ lookupCollection (k:l) Collection{ collectionSource = SourceCollections c } = lo
 lookupCollection _ _ = Nothing
 
 loadCollection :: Collection -> Either Collections (IO Documents)
-loadCollection Collection{..} =
+loadCollection c@Collection{..} =
   fmap (V.map $ generateFields collectionFields
       . HMap.insert "_key" (value $ last collectionKey)
       . HMap.insert "_name" (foldMap value collectionName))
     <$> loadSource collectionSource where
+  docs f = Right $ do
+    r <- f
+    when (V.null r) $ fail $ T.unpack (collectionId c) ++ ": no documents returned"
+    return r
   loadSource (SourceCollections l) = Left l
-  loadSource (SourceFDA i) = Right $ loadFDA i
-  loadSource (SourceDLTS c i) = Right $ loadDLTS c i fl
-  loadSource (SourceDLib p) = Right $ loadDLib p
-  loadSource SourceSDR = Right $ loadSDR
-  loadSource (SourceSpecialCollections f) = Right $ loadSpecialCollections f
+  loadSource (SourceFDA i) = docs $ loadFDA i
+  loadSource (SourceDLTS s i) = docs $ loadDLTS s i fl
+  loadSource (SourceDLib p) = docs $ loadDLib p
+  loadSource SourceSDR = docs $ loadSDR
+  loadSource (SourceSpecialCollections f) = docs $ loadSpecialCollections f
   fl = generatorsFields collectionFields
