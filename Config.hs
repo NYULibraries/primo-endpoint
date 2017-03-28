@@ -133,8 +133,8 @@ parseCollection env key = JSON.withObject "collection" $ \o -> do
     , collectionInterval = fromMaybe (configInterval $ envPreConfig env) i
     , collectionName = n
     , collectionFields =
-      HMap.insert "_id" (fieldGenerator "_id")
-      $ HMap.insert "_collection" (fieldGenerator "_collection")
+      HMap.insert "id" (fieldGenerator "id")
+      $ HMap.insert "collection" (fieldGenerator "collection")
       $ fixLanguage (envISO639 env)
       $ f <> t
     , collectionVerbose = envVerbose env

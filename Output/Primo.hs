@@ -17,6 +17,6 @@ import           Document
 outputPrimo :: Documents -> BSB.Builder
 outputPrimo = JSON.fromEncoding . JSONE.list
   (JSON.pairs . HMap.foldrWithKey (\k v a -> f k v <> a) mempty) . V.toList where
-  f "_id" = keyValueJSON' "id"
-  f "_collection" = keyValueJSON' "collection_ssm"
+  f "id" = keyValueJSON' "id"
+  f "collection" = keyValueJSON' "collection_ssm"
   f k = keyValueJSON ("desc_metadata__" <> k <> "_tesim")

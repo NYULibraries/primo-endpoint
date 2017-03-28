@@ -130,7 +130,7 @@ type Document = Metadata
 type Documents = V.Vector Document
 
 mkDocument :: T.Text -> T.Text -> Metadata -> Document
-mkDocument i c = HMap.insert "_id" (value i) . HMap.insert "_collection" (value c)
+mkDocument i c = HMap.insert "id" (value i) . HMap.insert "collection" (value c)
 
 -- |Convert a handle URL like @http://hdl.handle.net/x/y@ to a 'documentID' like @hdl-handle-net-x-y@.
 handleToID :: Monad m => Value -> m T.Text
