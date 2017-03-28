@@ -17,7 +17,6 @@ import           Control.Monad.Trans.Maybe (MaybeT(..))
 import qualified Data.Aeson.Types as JSON
 import qualified Data.ByteString as BS
 import qualified Data.HashMap.Strict as HMap
-import           Data.Foldable (fold)
 import           Data.Maybe (fromMaybe)
 import           Data.Monoid ((<>))
 import qualified Data.Text as T
@@ -132,11 +131,7 @@ parseCollection env key = JSON.withObject "collection" $ \o -> do
     , collectionSource = s
     , collectionInterval = fromMaybe (configInterval $ envPreConfig env) i
     , collectionName = n
-    , collectionFields =
-      HMap.insert "id" (fieldGenerator "id")
-      $ HMap.insert "collection" (fieldGenerator "collection")
-      $ fixLanguage (envISO639 env)
-      $ f <> t
+    , collectionFields = fixLanguage (envISO639 env) $ f <> t
     , collectionVerbose = envVerbose env
     }
   where
@@ -199,11 +194,14 @@ lookupCollection _ _ = Nothing
 
 loadCollection :: Collection -> Either Collections (IO Documents)
 loadCollection Collection{..} =
-  fmap (V.map $ generateFields collectionFields) <$> loadSource collectionSource where
+  fmap (V.map $ generateFields collectionFields
+      . HMap.insert "_key" (value $ last collectionKey)
+      . HMap.insert "_name" (foldMap value collectionName))
+    <$> loadSource collectionSource where
   loadSource (SourceCollections l) = Left l
   loadSource (SourceFDA i) = Right $ loadFDA i
-  loadSource (SourceDLTS c i) = Right $ loadDLTS (last collectionKey) collectionName c i fl
-  loadSource (SourceDLib p) = Right $ loadDLib (last collectionKey) (fold collectionName) p
+  loadSource (SourceDLTS c i) = Right $ loadDLTS c i fl
+  loadSource (SourceDLib p) = Right $ loadDLib p
   loadSource SourceSDR = Right $ loadSDR
-  loadSource (SourceSpecialCollections f) = Right $ loadSpecialCollections (last collectionKey) f
+  loadSource (SourceSpecialCollections f) = Right $ loadSpecialCollections f
   fl = generatorsFields collectionFields

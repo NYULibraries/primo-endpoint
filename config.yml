@@ -19,6 +19,14 @@ generators:
 templates:
   # standard translations for dublin core, as used in FDA
   traditional:
+    collection: parentCollection.name
+    id:
+      paste:
+      - string: "fda:"
+      - handle:
+          paste:
+          - string: "http://hdl.handle.net/"
+          - handle
     creator: dc.contributor.author
     title: dc.title
     date: dc.date.issued
@@ -37,6 +45,12 @@ templates:
     type: dc.type
   # standard translations for DLTS viewer core
   viewer:
+    collection: sm_collection_label
+    id:
+      paste:
+      - _key
+      - ":"
+      - handle: ss_handle
     available: ss_handle
     creator: sm_author
     data_provider:
@@ -64,6 +78,12 @@ templates:
     type:
       string: "Journal"
   dlib:
+    collection: _name
+    id:
+      paste:
+      - _key
+      - ":"
+      - identifier
     identifier: identifier
     title: entity_title
     available: handle
@@ -117,6 +137,13 @@ collections:
     code: oa-books
     name: "NYU Press Open Access Books"
     fields:
+      collection:
+        string: "NYU Press Open Access Books"
+      id:
+        paste:
+        - _key
+        - ":"
+        - id
       identifier: id
       isbn: id
       title: title
@@ -159,6 +186,13 @@ collections:
   sdr:
     source: SDR
     fields:
+      collection:
+        string: "Spatial Data Repository"
+      id:
+        paste:
+        - _key
+        - ":"
+        - handle: dc_identifier_s
       identifier: dc_identifier_s
       available:
         paste:
@@ -187,6 +221,13 @@ collections:
       dao_sim: 'Online Access'
       format_sim: 'Archival Object'
     fields:
+      collection: collection_ssm
+      id:
+        paste:
+        - _key
+        - ":"
+        - _key
+        - _ref_ssi
       identifier: _ref_ssi
       date: unitdate_ssm
       available:

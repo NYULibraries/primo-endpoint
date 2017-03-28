@@ -7,7 +7,6 @@ import qualified Data.Aeson.Types as JSON
 import qualified Data.ByteString as BS
 import qualified Data.HashMap.Strict as HMap
 import           Data.Monoid ((<>))
-import qualified Data.Text as T
 import qualified Network.HTTP.Client as HTTP
 
 import           Util
@@ -17,23 +16,17 @@ import           Source.Solr
 dlibRequest :: HTTP.Request
 dlibRequest = HTTP.parseRequest_ "http://dlib.nyu.edu"
 
-parseDLib :: T.Text -> T.Text -> JSON.Object -> JSON.Parser Document
-parseDLib pfx name o = do
+parseDLib :: JSON.Object -> JSON.Parser Document
+parseDLib o = do
   let t = parseValue <$> HMap.delete "metadata" o
   m <- mapM pm =<< o JSON..: "metadata"
-  let tm = t <> m
-  _hdl <- handleToID =<< oneValue (getMetadata tm "handle")
-  i <- o JSON..: "identifier"
-  return $ mkDocument
-    (pfx <> T.cons ':' i) -- _hdl
-    name
-    tm
+  return $ t <> m
   where
   pm v = pv <$> JSON.withObject "dlib metadata" (JSON..: "value") v
   pv (JSON.Object v) = foldMap parseValue $ HMap.lookup "value" v
   pv v = parseValue v
 
-loadDLib :: T.Text -> T.Text -> BS.ByteString -> IO Documents
-loadDLib pfx name path =
-  parseM (mapM $ parseDLib pfx name)
+loadDLib :: BS.ByteString -> IO Documents
+loadDLib path =
+  parseM (mapM parseDLib)
     =<< loadDrupal (addRequestPath dlibRequest path)

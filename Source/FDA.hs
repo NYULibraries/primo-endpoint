@@ -8,8 +8,7 @@ module Source.FDA
 import qualified Data.Aeson as JSON
 import qualified Data.Aeson.Types as JSON
 import qualified Data.ByteString.Char8 as BSC
-import qualified Data.HashMap.Strict as HM
-import           Data.Monoid ((<>))
+import qualified Data.HashMap.Strict as HMap
 import qualified Data.Text as T
 import qualified Data.Text.Read as T (decimal)
 import           Data.Time.Clock (UTCTime)
@@ -54,14 +53,15 @@ _guessLocalTime l = unsafePerformIO $ do
   z' <- getTimeZone $ localTimeToUTC z l
   return $ localTimeToUTC z' l
 
-parseFDA :: T.Text -> JSON.Value -> JSON.Parser Documents
-parseFDA name = withArrayOrSingleton $ mapM $ JSON.withObject "FDA item" $ \obj -> do
-  FDAHandle hdl0 hdl1 <- obj JSON..: "handle"
+parseFDA :: FDACollection -> JSON.Value -> JSON.Parser Documents
+parseFDA c = withArrayOrSingleton $ mapM $ JSON.withObject "FDA item" $ \obj -> do
+  handle <- obj JSON..: "handle"
+  -- any other fields from the top level we want?  more general list?
   -- mtime <- _guessLocalTime <$> obj JSON..: "lastModified"
   metadata <- readMetadata =<< obj JSON..: "metadata"
-  return $ mkDocument
-    ("fda:hdl-handle-net-" <> (T.pack $ show hdl0) <> "-" <> (T.pack $ show hdl1))
-    name
+  return
+    $ HMap.insert "parentCollection.name" (value $ fdaCollectionName c)
+    $ HMap.insert "handle" handle
     metadata
   where
   readField = JSON.withObject "FDA.metadata.field" $ \o ->
@@ -73,9 +73,9 @@ fdaRequest :: HTTP.Request
 fdaRequest = HTTP.addRequestHeader HTTP.hAccept "application/json"
   $ HTTP.parseRequest_ "https://archive.nyu.edu/rest/collections"
 
-loadFDAIndex :: Int -> IO (HM.HashMap Int Int)
+loadFDAIndex :: Int -> IO (HMap.HashMap Int Int)
 loadFDAIndex z =
-  V.foldl' (\m c -> HM.insert (fdaHandleSuffix $ fdaCollectionHandle c) (fdaCollectionId c) m) HM.empty
+  V.foldl' (\m c -> HMap.insert (fdaHandleSuffix $ fdaCollectionHandle c) (fdaCollectionId c) m) HMap.empty
     . HTTP.responseBody <$> HTTP.httpJSON (HTTP.setQueryString [("limit",Just $ BSC.pack $ show z)] fdaRequest)
 
 loadFDA :: Int -> IO Documents
@@ -84,5 +84,5 @@ loadFDA i = do
   j <- HTTP.responseBody <$> HTTP.httpJSON (
     HTTP.setQueryString [("expand",Just "metadata"),("limit",Just $ BSC.pack $ show $ fdaCollectionSize c)]
     $ addRequestPath req "items")
-  parseM (parseFDA $ fdaCollectionName c) j
+  parseM (parseFDA c) j
   where req = addRequestPath fdaRequest (BSC.pack $ show i)

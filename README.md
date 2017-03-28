@@ -61,9 +61,14 @@ Field definitions are made up of the following:
         * `default`: definition. If there are no produced input values, provide the definition instead.
         * `join`: string literal delimiter. Paste all the inputs together, separated by the given delimiter.  Always produces exactly one output.
 * Array: all produced values are merged, producing the sum of all the input values.
-* String literal starting with letter or "\_": same as `field`
-* Any other string literal: same as `string`
+* String literal starting with letter or "\_": passed to `field`
+* Any other string literal: passed to `string`
 * Null: same as empty array (produces 0 values)
+
+There are two special input fields added to every source document:
+
+* `_key`: The collection key
+* `_name`: The collection name field
 
 ## Reference data:
 
