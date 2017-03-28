@@ -56,10 +56,10 @@ Field definitions are made up of the following:
         * generator name: key-definition arguments as object. Substitutes a generator "macro" from the generator section, assigning the given keys to their corresponding values as input fields to the macro.  The generator can also see any other input fields as well.
     * Post-processors that first process the rest of the definition, and then apply a transformation on the result:
         * `date`: string [strptime format](http://hackage.haskell.org/package/time/docs/Data-Time-Format.html).  Tries to parse each value in the result with the given format and produces a timestamp in standard format (relevant prefix of "%Y-%m-%dT%H:%M:%S%QZ") as output. Any inputs that cannot be parsed are discarded.
-	* `lookup`: key-definition lookup table as object. Applies the lookup table translation to each input, substituting the right-side definition for any matching left-side key. If no key matches, the input is discarded.
-	* `limit`: integer. Take only the first *n* values from the input, discarding the rest.
-	* `default`: definition. If there are no produced input values, provide the definition instead.
-	* `join`: string literal delimiter. Paste all the inputs together, separated by the given delimiter.  Always produces exactly one output.
+        * `lookup`: key-definition lookup table as object. Applies the lookup table translation to each input, substituting the right-side definition for any matching left-side key. If no key matches, the input is discarded.
+        * `limit`: integer. Take only the first *n* values from the input, discarding the rest.
+        * `default`: definition. If there are no produced input values, provide the definition instead.
+        * `join`: string literal delimiter. Paste all the inputs together, separated by the given delimiter.  Always produces exactly one output.
 * Array: all produced values are merged, producing the sum of all the input values.
 * String literal starting with letter or "\_": same as `field`
 * Any other string literal: same as `string`
