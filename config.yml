@@ -137,8 +137,7 @@ collections:
     code: oa-books
     name: "NYU Press Open Access Books"
     fields:
-      collection:
-        string: "NYU Press Open Access Books"
+      collection: _name
       id:
         paste:
         - _key
@@ -185,9 +184,9 @@ collections:
         string: "Book"
   sdr:
     source: SDR
+    name: "Spatial Data Repository"
     fields:
-      collection:
-        string: "Spatial Data Repository"
+      collection: _name
       id:
         paste:
         - _key
