@@ -8,6 +8,7 @@ module Config
   , loadConfig
   , allCollections
   , lookupCollection
+  , loadSource
   , loadCollection
   ) where
 
@@ -191,6 +192,19 @@ lookupCollection :: [T.Text] -> Config -> Maybe Collection
 lookupCollection [] c = Just c
 lookupCollection (k:l) Collection{ collectionSource = SourceCollections c } = lookupCollection l =<< HMap.lookup k c
 lookupCollection _ _ = Nothing
+
+loadSource :: Collection -> IO Documents
+loadSource c = do
+  r <- ls $ collectionSource c
+  when (V.null r) $ fail $ T.unpack (collectionId c) ++ ": no documents returned"
+  return r
+  where
+  ls (SourceFDA i) = loadFDA i
+  ls (SourceDLTS s i) = loadDLTS s i fl
+  ls (SourceDLib p) = loadDLib p
+  ls SourceSDR = loadSDR
+  ls (SourceSpecialCollections f) = loadSpecialCollections f
+  fl = generatorsFields $ collectionFields c
 
 loadCollection :: Collection -> Either Collections (IO Documents)
 loadCollection c@Collection{..} =

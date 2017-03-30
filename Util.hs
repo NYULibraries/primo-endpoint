@@ -1,6 +1,7 @@
 module Util
   ( foldMapM
   , fromDoesNotExist
+  , getModificationTime'
   , getModificationTime0
   , jsonOr
   , withObjectOrNull
@@ -29,6 +30,9 @@ foldMapM f = foldlM (\b a -> mappend b <$> f a) mempty
 
 fromDoesNotExist :: a -> IO a -> IO a
 fromDoesNotExist d = handleJust (guard . isDoesNotExistError) (\_ -> return d)
+
+getModificationTime' :: FilePath -> IO (Maybe UTCTime)
+getModificationTime' f = fromDoesNotExist Nothing $ Just <$> getModificationTime f
 
 getModificationTime0 :: FilePath -> IO UTCTime
 getModificationTime0 = fromDoesNotExist (UTCTime (toEnum 0) 0) . getModificationTime
