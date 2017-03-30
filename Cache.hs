@@ -2,28 +2,28 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-}
 module Cache
-  ( updateCollection
+  ( loadCollection
+  , generateCollection
   ) where
 
 import           Control.Exception (SomeException, bracketOnError, try, throwIO)
 #if MIN_VERSION_base(4,8,0)
 import           Control.Exception (displayException)
 #endif
-import           Control.Monad (liftM2, guard, when)
+import           Control.Monad (liftM2)
 import qualified Data.Aeson as JSON
-import qualified Data.ByteString.Builder as BSB
 import qualified Data.ByteString.Lazy.Char8 as BSLC
-import           Data.Monoid (Any(..))
-import qualified Data.Text as T
-import           Data.Time.Clock (UTCTime, NominalDiffTime, getCurrentTime, diffUTCTime, addUTCTime)
+import qualified Data.HashMap.Strict as HMap
+import           Data.Time.Clock (UTCTime, addUTCTime)
+import qualified Data.Vector as V
 import           System.FilePath ((<.>), splitFileName)
 import           System.Directory (removeFile, renameFile)
-import           System.IO (Handle, IOMode(ReadMode), SeekMode(AbsoluteSeek), stderr, openBinaryFile, openTempFileWithDefaultPermissions, hFileSize, hSeek, hGetChar, hPutChar, hPutStr, hPutStrLn, hClose)
+import           System.IO (Handle, IOMode(ReadMode), stderr, openBinaryFile, openTempFileWithDefaultPermissions, hFileSize, hPutStrLn, hClose)
 
 import           Util
 import           Config
 import           Document
-import           Output.Primo
+import           Fields
 
 #if !MIN_VERSION_base(4,8,0)
 displayException :: Exception e => e -> String
@@ -62,19 +62,18 @@ updateFile f w = bracketOnError
   where
   (fd, ff) = splitFileName f
 
--- |Run an operation, caching its result in a file, or retrieve the cached value if the file is newer than an interval.
--- If the operation throws an error, the error is cached in @file.err@, and any old cache is used for another time interval before retrying.
-cache :: (JSON.ToJSON a, JSON.FromJSON a) => FilePath -> Maybe NominalDiffTime -> IO a -> IO a
-cache f md g
-  | Just d <- md = do
-  new <- any . (<) . addUTCTime (negate d) <$> getCurrentTime
+-- |Run an operation, caching its result in a file, or retrieve the cached value if the file is newer than a time.
+-- If the operation throws an error, the error is cached in @file.err@, and any old cache is used until the error also ages out.
+cache :: (JSON.ToJSON a, JSON.FromJSON a) => FilePath -> Maybe UTCTime -> IO a -> IO a
+cache f mt g
+  | Just t <- mt = do
   m <- getModificationTime' f
   let load' = maybe id (const $ load . const) m -- load if cache exists
-  if new m -- new enough?
+  if any (t <) m -- new enough?
     then load fail -- use cache
     else do
       me <- getModificationTime' fe
-      if new me -- recent error?
+      if any (t <) me -- recent error?
         then load' $ fail =<< readFile fe -- use cache
         else update $ load' . throwIO -- reload
   | otherwise = update throwIO -- never use (but still update) cache
@@ -92,41 +91,15 @@ cache f md g
       fromDoesNotExist () $ removeFile fe
       return x)
 
-readCollection :: Collection -> Bool -> IO Documents
-readCollection c force =
-  cache (collectionCache c) (collectionInterval c <$ guard (not force)) $ loadSource c
+loadCollection :: Config -> Maybe UTCTime -> Collection -> IO Documents
+loadCollection conf t c =
+  cache (collectionCache c) (addUTCTime (negate $ collectionInterval c) <$> t) $ loadSource conf c
 
-updateCollection :: Collection -> Bool -> UTCTime -> IO UTCTime
-updateCollection c@Collection{ collectionCache = f } force t = do
-  m <- getModificationTime0 f
-  let uc = force || diffUTCTime t m >= collectionInterval c
-  u <- case loadCollection c of
-    Left l | uc -> -- meta-collection: load children
-      getAny <$> foldMapM (\c' -> Any . (m <) <$> updateCollection c' force t) l
-    _ -> return uc -- don't actually load a real collection
-  if not u then return m else do
-    when (collectionVerbose c) $ putStrLn $ "updating " ++ cis
-    d <- either (return . Right . Left) (try . fmap Right) $ loadCollection c
-    updateFile f $ \h -> either
-      (\e -> do
-        let s = cis ++ ": " ++ displayException (e :: SomeException)
-        hPutStrLn stderr s
-        hPutStr h s)
-      (either
-        (\l -> do
-          mapM_ (\Collection{ collectionCache = cf } -> fromDoesNotExist () $
-              readBinaryFile cf $ \r -> do
-                z <- hFileSize r
-                o <- if z > 2 then Just <$> hGetChar r else return Nothing
-                if o == Just '['
-                  then BSLC.hPut h . BSLC.cons ',' . BSLC.init =<< BSLC.hGetContents r
-                  else hClose r)
-            l
-          hPutChar h ']'
-          hSeek h AbsoluteSeek 0
-          hPutChar h '[')
-        (BSB.hPutBuilder h . outputPrimo))
-      d
-    getModificationTime0 f
-  where
-  cis = T.unpack $ collectionId c
+generateCollection :: Config -> Maybe UTCTime -> Maybe Collection -> IO Documents
+generateCollection conf t (Just c) = V.map
+  (generateFields (collectionFields c)
+    . HMap.insert "_key" (value $ collectionKey c)
+    . HMap.insert "_name" (foldMap value $ collectionName c))
+  <$> loadCollection conf t c
+generateCollection conf t Nothing =
+  foldMapM (generateCollection conf t . Just) $ configCollections conf

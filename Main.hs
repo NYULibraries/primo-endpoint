@@ -3,9 +3,11 @@
 {-# LANGUAGE ViewPatterns #-}
 
 import           Control.Monad (forM_)
-import qualified Data.ByteString.Lazy.Char8 as BSLC
+import qualified Data.ByteString.Builder as BSB
 import           Data.List (foldl')
+import qualified Data.HashMap.Strict as HMap
 import           Data.Maybe (fromMaybe)
+import qualified Data.Text as T
 import           Data.Time.Clock (getCurrentTime)
 import           Network.Connection (TLSSettings(..))
 import qualified Network.HTTP.Client as HTTP
@@ -23,11 +25,12 @@ import           System.Exit (exitFailure)
 #if !MIN_VERSION_directory(1,2,3)
 import           System.FilePath ((</>))
 #endif
-import           System.IO (hPutStrLn, stderr)
+import           System.IO (hPutStrLn, stdout, stderr, withFile, IOMode(WriteMode))
 
 import           Config
 import           Auth
 import           Cache
+import           Output.Primo
 import           Server
 
 data Opts = Opts
@@ -35,6 +38,7 @@ data Opts = Opts
   , optAuth :: FilePath
   , optCache :: Maybe FilePath
   , optForce :: Bool
+  , optCollection :: Maybe String
   , optOutput :: Maybe String
   , optServer :: Maybe Int
   , optLog :: Bool
@@ -47,6 +51,7 @@ defOpts = Opts
   , optAuth = "auth.yml"
   , optCache = Nothing
   , optForce = False
+  , optCollection = Nothing
   , optOutput = Nothing
   , optServer = Nothing
   , optLog = False
@@ -62,9 +67,11 @@ opts =
   , Opt.Option "C" ["cache"] (Opt.ReqArg (\f o -> o{ optCache = Just f }) "DIR")
     "Use DIR for cache files [$XDR_CACHE_DIR/primo-endpoint]"
   , Opt.Option "f" ["force"] (Opt.NoArg (\o -> o{ optForce = True }))
-    "Force an initial update of all collections"
+    "Force an initial update of collections"
   , Opt.Option "o" ["output"] (Opt.OptArg (\f o -> o{ optOutput = Just (fromMaybe "-" f) }) "DEST")
     "Write JSON output to file [-]"
+  , Opt.Option "k" ["collection"] (Opt.ReqArg (\f o -> o{ optCollection = Just f }) "KEY")
+    "Limit -o and -f to a single collection"
   , Opt.Option "w" ["web-server"] (Opt.OptArg (\f o -> o{ optServer = Just (maybe 80 read f) }) "PORT")
     "Run a web server on PORT [80] to serve the result"
   , Opt.Option "l" ["log-access"] (Opt.NoArg (\o -> o{ optLog = True }))
@@ -73,9 +80,9 @@ opts =
     "Log collection refreshes to stdout"
   ]
 
-outputFile :: String -> BSLC.ByteString -> IO ()
-outputFile "-" = BSLC.putStr
-outputFile f = BSLC.writeFile f
+outputFile :: String -> BSB.Builder -> IO ()
+outputFile "-" = BSB.hPutBuilder stdout
+outputFile f = withFile f WriteMode . flip BSB.hPutBuilder
 
 main :: IO ()
 main = do
@@ -101,9 +108,11 @@ main = do
   createDirectoryIfMissing True cache
   config <- loadConfig optForce cache optConfig optVerbose
 
-  _ <- updateCollection config optForce =<< getCurrentTime
-
-  mapM_ (\o -> outputFile o =<< BSLC.readFile (collectionCache config)) optOutput
+  c <- mapM (\c -> maybe (fail $ "collection key not found: " ++ c) return
+    $ HMap.lookup (T.pack c) $ configCollections config) optCollection
+  t <- getCurrentTime
+  d <- generateCollection config (if optForce then Nothing else Just t) c
+  mapM_ (\o -> outputFile o $ outputPrimo d) optOutput
 
   forM_ optServer $ \port -> do
     server port optLog config

@@ -3,13 +3,9 @@
 module Config
   ( Collection(..)
   , Collections
-  , collectionId
-  , Config
+  , Config(..)
   , loadConfig
-  , allCollections
-  , lookupCollection
   , loadSource
-  , loadCollection
   ) where
 
 import           Control.Arrow ((***))
@@ -25,7 +21,7 @@ import qualified Data.Text.Encoding as TE (encodeUtf8)
 import           Data.Time.Clock (NominalDiffTime, getCurrentTime, diffUTCTime)
 import qualified Data.Vector as V
 import qualified Data.Yaml as YAML
-import           System.FilePath ((</>), (<.>), joinPath)
+import           System.FilePath ((</>), (<.>))
 import           Text.Read (readMaybe)
 
 import           Util
@@ -64,31 +60,29 @@ loadIndices conf = Indices
 -- |Possible metadata sources.
 -- These correspond to modules in "Source" and the collection source config key.
 data Source
-  = SourceCollections Collections -- ^aggregate multiple collections
-  | SourceFDA Int
+  = SourceFDA Int
   | SourceDLTS DLTSCore T.Text
   | SourceDLib BS.ByteString
   | SourceSDR
   | SourceSpecialCollections [(BS.ByteString, BS.ByteString)]
 
 data Collection = Collection
-  { collectionKey :: [T.Text] -- ^Unique key for this collection
+  { collectionKey :: !T.Text -- ^Unique key for this collection
   , collectionSource :: !Source
   , collectionCache :: FilePath -- ^JSON cache file for processed 'Document's
   , collectionInterval :: !Interval -- ^Max cache file age before reloading
   , collectionName :: Maybe T.Text
   , collectionFields :: Generators -- ^Metadata field mapping
-  , collectionVerbose :: !Bool
   }
-
-collectionId :: Collection -> T.Text
-collectionId = T.intercalate "/" . collectionKey
 
 -- |Map from 'collectionKey' to 'Collection'
 type Collections = HMap.HashMap T.Text Collection
 
 -- |A loaded configuration
-type Config = Collection
+data Config = Config
+  { configCollections :: Collections
+  , configVerbose :: !Bool
+  }
 
 -- |Values used during loading the config file
 data Env = Env
@@ -119,7 +113,7 @@ parseSource _ o "SpecialCollections" = SourceSpecialCollections
 parseSource _ _ s = fail $ "Unknown collection source: " ++ show s
 
 -- |@parseCollection generators templates key value@
-parseCollection :: Env -> [T.Text] -> JSON.Value -> JSON.Parser Collection
+parseCollection :: Env -> T.Text -> JSON.Value -> JSON.Parser Collection
 parseCollection env key = JSON.withObject "collection" $ \o -> do
   s <- parseSource env o =<< o JSON..: "source"
   i <- o JSON..:? "interval"
@@ -128,12 +122,11 @@ parseCollection env key = JSON.withObject "collection" $ \o -> do
   t <- withArrayOrNullOrSingleton (foldMapM getTemplate) =<< o JSON..:? "template" JSON..!= JSON.Null
   return Collection
     { collectionKey = key
-    , collectionCache = envCache env </> joinPath (map T.unpack key) <.> "json"
+    , collectionCache = envCache env </> T.unpack key <.> "json"
     , collectionSource = s
     , collectionInterval = fromMaybe (configInterval $ envPreConfig env) i
     , collectionName = n
     , collectionFields = fixLanguage (envISO639 env) $ f <> t
-    , collectionVerbose = envVerbose env
     }
   where
   getTemplate = JSON.withText "template name" $ \s ->
@@ -143,16 +136,11 @@ parseConfig :: Env -> JSON.Value -> JSON.Parser Config
 parseConfig env = JSON.withObject "config" $ \o -> do
   g <- o JSON..:? "generators" JSON..!= mempty
   t <- withObjectOrNull "templates" (mapM $ parseGenerators g) =<< o JSON..:? "templates" JSON..!= JSON.Null
-  c <- JSON.withObject "collections" (HMap.traverseWithKey $ parseCollection env{ envGenerators = g <> envGenerators env, envTemplates = t <> envTemplates env } . return)
+  c <- JSON.withObject "collections" (HMap.traverseWithKey $ parseCollection env{ envGenerators = g <> envGenerators env, envTemplates = t <> envTemplates env })
     =<< o JSON..: "collections"
-  return Collection
-    { collectionKey = []
-    , collectionSource = SourceCollections c
-    , collectionCache = envCache env </> "json"
-    , collectionInterval = configInterval (envPreConfig env) / fromIntegral (max 1 $ HMap.size c)
-    , collectionName = Just "all"
-    , collectionFields = mempty
-    , collectionVerbose = envVerbose env
+  return Config
+    { configCollections = c
+    , configVerbose = envVerbose env
     }
 
 updateIndices :: Bool -> PreConfig -> FilePath -> IO Indices
@@ -183,20 +171,11 @@ loadConfig force cache conf verb = do
     , envVerbose = verb
     }) jc
 
-allCollections :: Config -> [Collection]
-allCollections c = c : ac (collectionSource c) where
-  ac (SourceCollections l) = foldMap allCollections l
-  ac _ = []
-
-lookupCollection :: [T.Text] -> Config -> Maybe Collection
-lookupCollection [] c = Just c
-lookupCollection (k:l) Collection{ collectionSource = SourceCollections c } = lookupCollection l =<< HMap.lookup k c
-lookupCollection _ _ = Nothing
-
-loadSource :: Collection -> IO Documents
-loadSource c = do
+loadSource :: Config -> Collection -> IO Documents
+loadSource Config{ configVerbose = verb } c = do
+  when verb $ putStrLn $ "Loading " ++ cs
   r <- ls $ collectionSource c
-  when (V.null r) $ fail $ T.unpack (collectionId c) ++ ": no documents returned"
+  when (V.null r) $ fail $ cs ++ ": no documents returned"
   return r
   where
   ls (SourceFDA i) = loadFDA i
@@ -205,21 +184,4 @@ loadSource c = do
   ls SourceSDR = loadSDR
   ls (SourceSpecialCollections f) = loadSpecialCollections f
   fl = generatorsFields $ collectionFields c
-
-loadCollection :: Collection -> Either Collections (IO Documents)
-loadCollection c@Collection{..} =
-  fmap (V.map $ generateFields collectionFields
-      . HMap.insert "_key" (value $ last collectionKey)
-      . HMap.insert "_name" (foldMap value collectionName))
-    <$> loadSource collectionSource where
-  docs f = Right $ do
-    r <- f
-    when (V.null r) $ fail $ T.unpack (collectionId c) ++ ": no documents returned"
-    return r
-  loadSource (SourceCollections l) = Left l
-  loadSource (SourceFDA i) = docs $ loadFDA i
-  loadSource (SourceDLTS s i) = docs $ loadDLTS s i fl
-  loadSource (SourceDLib p) = docs $ loadDLib p
-  loadSource SourceSDR = docs $ loadSDR
-  loadSource (SourceSpecialCollections f) = docs $ loadSpecialCollections f
-  fl = generatorsFields collectionFields
+  cs = T.unpack $ collectionKey c
