@@ -128,7 +128,7 @@ valueHTML s
 instance H.ToMarkup Value where
   toMarkup (Value []) = mempty
   toMarkup (Value [s]) = valueHTML s
-  toMarkup (Value l) = H.ol $ foldMap (H.li . valueHTML) l
+  toMarkup (Value l) = H.ul $ foldMap (H.li . valueHTML) l
 
 type Metadata = HMap.HashMap T.Text Value
 
