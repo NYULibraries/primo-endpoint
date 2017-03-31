@@ -1,0 +1,42 @@
+$doctype 5
+<html>
+  <body>
+    <form method=get action=/>
+      <input type=hidden name=html value=1>
+      <label>
+        collection
+        <select name=collection>
+          <option value= :isNothing coll:selected>all
+          $forall c <- configCollections conf
+            <option value=#{collectionKey c} :any (on (==) collectionKey $ c) coll:selected>#{collName c}
+      <label>
+        <input type=number name=count min=1 max=#{n} step=1 value=#{count}>
+        per page
+      $if isJust coll
+        <label>
+          <input type=checkbox name=orig :orig:checked>
+          untransformed fields
+      <input type=submit>
+      $forall c <- coll
+        <h2>#{collName c}
+      <div>
+        <a href=/#{foldMap collectionKey coll}?json=1>json
+        #{n} documents
+      $forall d <- l
+        <h3>#{getMetadata d "id"}
+        #{htmlDocument d}
+      <div>
+        <label>page
+          $if page > 1
+            ^{navto 1}
+          $if page > 3
+            &hellip;
+          $if page > 2
+            ^{navto (pred page)}
+          <input type=number name=page min=1 max=#{np} step=1 value=#{page}>
+          $if page < pred np
+            ^{navto (succ page)}
+          $if page < pred (pred np)
+            &hellip;
+          $if page < np
+            ^{navto np}

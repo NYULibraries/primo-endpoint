@@ -31,6 +31,9 @@ import qualified Data.Text as T
 import           Data.Time.Clock (UTCTime)
 import           Data.Time.Format (ParseTime(..), formatTime)
 import qualified Data.Vector as V
+import           Network.URI (parseURI, uriScheme)
+import qualified Text.Blaze.Html5 as H
+import qualified Text.Blaze.Html5.Attributes as HA
 
 -- |Metadata values can always be multiple
 newtype Value = Value{ values :: [T.Text] }
@@ -115,6 +118,17 @@ instance ParseTime Value where
     chk s f
       | any (`elem` c) (s :: String) = f
       | otherwise = ""
+
+valueHTML :: T.Text -> H.Html
+valueHTML s
+  | Just u <- parseURI (T.unpack s), uriScheme u `elem` ["http:", "https:", "ftp:"] =
+    H.a H.! HA.href (H.stringValue $ show u) $ H.text s
+  | otherwise = H.text s
+
+instance H.ToMarkup Value where
+  toMarkup (Value []) = mempty
+  toMarkup (Value [s]) = valueHTML s
+  toMarkup (Value l) = H.ol $ foldMap (H.li . valueHTML) l
 
 type Metadata = HMap.HashMap T.Text Value
 

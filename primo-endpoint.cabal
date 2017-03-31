@@ -59,6 +59,7 @@ executable primo-endpoint
     http-client-tls,
     http-conduit >= 2.2,
     http-types,
+    shakespeare,
     wai,
     wai-extra,
     warp,
