@@ -36,6 +36,7 @@ loadSolrOffset req fq fl start rows =
     (HTTP.setQueryString
       [ ("wt", Just "json")
       , ("hl", Just "off")
+      , ("timeAllowed", Just "0")
       , ("fl", Just fl)
       , ("fq", Just fq)
       , ("sort", Just "id asc")
