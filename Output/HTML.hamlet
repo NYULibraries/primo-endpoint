@@ -25,7 +25,7 @@ $doctype 5
         #{n} documents
       $forall d <- l
         <h3>#{getMetadata d "id"}
-        #{htmlDocument d}
+        #{htmlDocument $ HMap.delete "id" d}
       <div>
         <label>page
           $if page > 1
