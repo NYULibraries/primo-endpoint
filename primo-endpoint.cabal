@@ -38,6 +38,7 @@ executable primo-endpoint
     Output.HTML
     Output.Primo
     Output.MODS
+    Output
     Server
   default-language:    Haskell2010
   ghc-options: -Wall
