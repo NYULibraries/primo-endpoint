@@ -4,6 +4,7 @@
 
 import           Control.Monad (forM_)
 import qualified Data.ByteString.Builder as BSB
+import qualified Data.ByteString.Lazy.Char8 as BSLC
 import           Data.List (foldl')
 import qualified Data.HashMap.Strict as HMap
 import           Data.Maybe (fromMaybe)
@@ -25,12 +26,13 @@ import           System.Exit (exitFailure)
 #if !MIN_VERSION_directory(1,2,3)
 import           System.FilePath ((</>))
 #endif
-import           System.IO (hPutStrLn, stdout, stderr, withFile, IOMode(WriteMode))
+import           System.IO (Handle, hPutStrLn, stdout, stderr, withFile, IOMode(WriteMode))
 
 import           Config
 import           Auth
 import           Cache
 import           Output.Primo
+import           Output.MODS
 import           Server
 
 data Opts = Opts
@@ -40,6 +42,7 @@ data Opts = Opts
   , optForce :: Bool
   , optCollection :: Maybe String
   , optOutput :: Maybe String
+  , optMODS :: Bool
   , optServer :: Maybe Int
   , optLog :: Bool
   , optVerbose :: Bool
@@ -53,6 +56,7 @@ defOpts = Opts
   , optForce = False
   , optCollection = Nothing
   , optOutput = Nothing
+  , optMODS = False
   , optServer = Nothing
   , optLog = False
   , optVerbose = False
@@ -69,9 +73,11 @@ opts =
   , Opt.Option "f" ["force"] (Opt.NoArg (\o -> o{ optForce = True }))
     "Force an initial update of collections"
   , Opt.Option "o" ["output"] (Opt.OptArg (\f o -> o{ optOutput = Just (fromMaybe "-" f) }) "DEST")
-    "Write JSON output to file [-]"
+    "Write output to file [-]"
   , Opt.Option "k" ["collection"] (Opt.ReqArg (\f o -> o{ optCollection = Just f }) "KEY")
     "Limit -o and -f to a single collection"
+  , Opt.Option "x" ["MODS"] (Opt.NoArg (\o -> o{ optMODS = True }))
+    "Output (-o) in MODS XML format [Primo JSON]"
   , Opt.Option "w" ["web-server"] (Opt.OptArg (\f o -> o{ optServer = Just (maybe 80 read f) }) "PORT")
     "Run a web server on PORT [80] to serve the result"
   , Opt.Option "l" ["log-access"] (Opt.NoArg (\o -> o{ optLog = True }))
@@ -80,9 +86,9 @@ opts =
     "Log collection refreshes to stdout"
   ]
 
-outputFile :: String -> BSB.Builder -> IO ()
-outputFile "-" = BSB.hPutBuilder stdout
-outputFile f = withFile f WriteMode . flip BSB.hPutBuilder
+outputFile :: (Handle -> IO ()) -> String -> IO ()
+outputFile w "-" = w stdout
+outputFile w f = withFile f WriteMode w
 
 main :: IO ()
 main = do
@@ -112,7 +118,7 @@ main = do
     $ HMap.lookup (T.pack c) $ configCollections config) optCollection
   t <- getCurrentTime
   d <- generateCollection config (if optForce then Nothing else Just t) c
-  mapM_ (\o -> outputFile o $ outputPrimo d) optOutput
+  mapM_ (outputFile $ \h -> (if optMODS then BSLC.hPut h . outputMODS else BSB.hPutBuilder h . outputPrimo) d) optOutput
 
   forM_ optServer $ \port -> do
     server port optLog config

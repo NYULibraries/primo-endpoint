@@ -10,17 +10,15 @@ import           Data.Maybe (mapMaybe)
 import qualified Data.Text.Encoding as TE (decodeUtf8)
 import           Data.Time.Clock (UTCTime, getCurrentTime)
 import           Data.Time.Format (formatTime, defaultTimeLocale)
-import           Network.HTTP.Types (ok200, badRequest400, notFound404, methodNotAllowed405, hAccept, hContentType, hLastModified, hDate)
+import           Network.HTTP.Types (badRequest400, notFound404, methodNotAllowed405, hAccept, hLastModified, hDate)
 import qualified Network.Wai as Wai
 import qualified Network.Wai.Handler.Warp as Warp
 import qualified Network.Wai.Middleware.RequestLogger as Log
 import           Network.Wai.Parse (parseHttpAccept)
-import           Text.Blaze.Html.Renderer.Utf8 (renderHtmlBuilder)
 
 import           Config
 import           Cache
-import           Output.Primo
-import           View
+import           Output
 
 formatDate :: UTCTime -> BSC.ByteString
 formatDate = BSC.pack . formatTime defaultTimeLocale "%a, %d %b %Y %T GMT"
@@ -40,13 +38,7 @@ serve conf req = maybe
       return $ Wai.mapResponseHeaders (++
         [ (hLastModified, formatDate t) -- XXX
         , (hDate, formatDate t)
-        ]) $ if html
-        then Wai.responseBuilder ok200
-          [ (hContentType, "text/html;charset=utf-8") ]
-          $ renderHtmlBuilder $ view conf c d orig (Wai.queryString req)
-        else Wai.responseBuilder ok200
-          [ (hContentType, "application/json") ]
-          $ outputPrimo d
+        ]) $ outputResponse fmt conf c (Wai.queryString req) d
     _ -> return $ Wai.responseLBS methodNotAllowed405
       [(hAccept, "GET")] mempty)
   coll
@@ -67,12 +59,24 @@ serve conf req = maybe
   getcoll c = Just <$> HMap.lookup c (configCollections conf)
   refresh = boolq "refresh"
   orig = boolq "orig"
-  accept = foldMap parseHttpAccept $ lookup hAccept $ Wai.requestHeaders req
-  html = not (boolq "json") && (boolq "html" ||
-    head (mapMaybe (\t -> case t of
-      "text/html" -> Just True
-      "application/json" -> Just False
-      _ -> Nothing) accept ++ [False]))
+  fmt
+    | boolq "json" = OutputPrimo
+    | boolq "html" = OutputHTML orig
+    | Just f <- case getq "fmt" of
+      Just (Just "html") -> Just $ OutputHTML orig
+      Just (Just "json") -> Just OutputPrimo
+      Just (Just "primo") -> Just OutputPrimo
+      Just (Just "xml") -> Just OutputMODS
+      Just (Just "mods") -> Just OutputMODS
+      _ -> Nothing = f
+    | (f:_) <- mapMaybe fmtmt $ foldMap parseHttpAccept $ lookup hAccept $ Wai.requestHeaders req = f
+    | otherwise = OutputPrimo
+  fmtmt "application/json" = Just OutputPrimo
+  fmtmt "text/json" = Just OutputPrimo
+  fmtmt "text/html" = Just $ OutputHTML orig
+  fmtmt "application/xml" = Just OutputMODS
+  fmtmt "text/xml" = Just OutputMODS
+  fmtmt _ = Nothing
 
 server :: Int -> Bool -> Config -> IO ()
 server port logging conf = Warp.run port

@@ -20,7 +20,8 @@ $doctype 5
       $forall c <- coll
         <h2>#{collName c}
       <div>
-        <a href=/#{foldMap collectionKey coll}?json=1>json
+        <a href=/#{foldMap collectionKey coll}?fmt=json>json
+        <a href=/#{foldMap collectionKey coll}?fmt=mods>MODS
         #{n} documents
       $forall d <- l
         <h3>#{getMetadata d "id"}

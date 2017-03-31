@@ -3,11 +3,12 @@
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TemplateHaskell #-}
-module View
-  ( view
+module Output.HTML
+  ( outputHTML
   ) where
 
 import           Control.Monad (join)
+import qualified Data.ByteString.Builder as BSB
 import qualified Data.ByteString.Char8 as BSC
 import           Data.Function (on)
 import qualified Data.HashMap.Strict as HMap
@@ -16,6 +17,7 @@ import           Data.Monoid ((<>))
 import qualified Data.Text as T
 import qualified Data.Vector as V
 import           Network.HTTP.Types.URI (Query)
+import           Text.Blaze.Html.Renderer.Utf8 (renderHtmlBuilder)
 import qualified Text.Blaze.Html5 as H
 import           Text.Hamlet (hamlet, hamletFile)
 import           Text.Read (readMaybe)
@@ -28,9 +30,9 @@ htmlDocument m = H.dl
   $ HMap.foldrWithKey (\k v -> mappend $ H.dt (H.text k) <> H.dd (H.toMarkup v))
     mempty m
 
-view :: Config -> Maybe Collection -> Documents -> Bool -> Query -> H.Html
-view conf coll docs orig q =
-  $(hamletFile "view.hamlet") nourls
+outputHTML :: Config -> Maybe Collection -> Query -> Bool -> Documents -> BSB.Builder
+outputHTML conf coll q orig docs = renderHtmlBuilder
+  $ $(hamletFile "Output/HTML.hamlet") nourls
   where
   collName c = fromMaybe (collectionKey c) (collectionName c)
   n = V.length docs

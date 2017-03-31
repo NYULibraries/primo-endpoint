@@ -1,0 +1,70 @@
+<mods xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xmlns="http://www.loc.gov/mods/v3" version="3.4"
+  xsi:schemaLocation="http://www.loc.gov/mods/v3 http://www.loc.gov/standards/mods/v3/mods-3-4.xsd">
+  <titleInfo>
+    $forall title <- get "title"
+      <title>#{title}
+  $forall ident <- get "identifier"
+    <identifier type=#{identType ident}>
+      #{ident}
+  $forall contrib <- get "contributor"
+    <name>
+      ^{nameXML "contributor" contrib}
+  $forall creator <- get "creator"
+    <name>
+      ^{nameXML "creator" creator}
+  <originInfo>
+    $forall date <- get "date"
+      <dateIssued>#{date}
+    $forall pub <- get "publisher"
+      $maybe (n, p, d) <- splitPublisher pub
+        <publisher>#{n}
+        <place>#{p}
+        <dateIssued>#{d}
+      $nothing
+        <publisher>#{pub}
+    $forall edition <- get "edition"
+      <edition>#{edition}
+  $forall form <- get "format"
+    <physicalDescription>
+      <format>#{form}
+  $forall desc <- get "description"
+    <note>#{desc}
+  <language>
+    $forall lang <- get "language"
+      <languageTerm  authority="iso639-2b" type="code">
+        <!-- #{fromMaybe lang $ getCode3 langs lang} -->
+        #{lang}
+  $forall right <- get "rights"
+    <accessCondition type="use and reproduction">#{right}
+  $forall restr <- get "restrictions"
+    <accessCondition type="restriction on access">#{restr}
+  $forall isbn <- get "isbn"
+    <identifier type="isbn">#{isbn}
+  $forall subj <- get "subject"
+    <subject>
+      <topic>#{subj}
+  $forall subj <- get "subject_spatial"
+    <subject>
+      <geographic>#{subj}
+  $forall subj <- get "subject_temporal"
+    <subject>
+      <temporal>#{subj}
+  $forall series <- get "series"
+    <relatedItem type="series">
+      <titleInfo>
+        <title>#{series}
+  $forall genre <- get "genre"
+      <genre>#{genre}
+  $forall rtype <- get "type"
+      <typeOfResource>#{rtype}
+  $forall loc <- get "location"
+    <location>
+      <physicalLocation>#{loc}
+  $forall avail <- get "available"
+    <location>
+      <url>#{avail}
+  <!-- TODO: relation
+             addinfolink addinfotext data_provider discoverable geometry repo resource_set
+             citation version
+  -->
