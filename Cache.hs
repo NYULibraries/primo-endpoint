@@ -2,7 +2,8 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-}
 module Cache
-  ( cache
+  ( defaultCacheDir
+  , cache
   ) where
 
 import           Control.Exception (SomeException, bracketOnError, try, throwIO)
@@ -14,10 +15,24 @@ import qualified Data.Aeson as JSON
 import qualified Data.ByteString.Lazy.Char8 as BSLC
 import           Data.Time.Clock (UTCTime)
 import           System.FilePath ((<.>), splitFileName)
-import           System.Directory (removeFile, renameFile)
+import           System.Directory (removeFile, renameFile
+#if MIN_VERSION_directory(1,2,3)
+  , getXdgDirectory, XdgDirectory(XdgCache)
+#else
+  , getHomeDirectory
+#endif
+  )
 import           System.IO (Handle, IOMode(ReadMode), stderr, openBinaryFile, openTempFileWithDefaultPermissions, hFileSize, hPutStrLn, hClose)
 
 import           Util
+
+defaultCacheDir :: IO FilePath
+defaultCacheDir =
+#if MIN_VERSION_directory(1,2,3)
+  (getXdgDirectory XdgCache "primo-endpoint")
+#else
+  ((</> ".cache" </> "primo-endpoint") <$> getHomeDirectory)
+#endif
 
 #if !MIN_VERSION_base(4,8,0)
 displayException :: Exception e => e -> String

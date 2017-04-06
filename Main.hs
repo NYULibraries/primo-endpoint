@@ -1,4 +1,3 @@
-{-# LANGUAGE CPP #-}
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE ViewPatterns #-}
 
@@ -14,20 +13,12 @@ import           Network.Connection (TLSSettings(..))
 import qualified Network.HTTP.Client as HTTP
 import qualified Network.HTTP.Client.TLS as HTTPS
 import qualified System.Console.GetOpt as Opt
-import           System.Directory (createDirectoryIfMissing
-#if MIN_VERSION_directory(1,2,3)
-  , getXdgDirectory, XdgDirectory(XdgCache)
-#else
-  , getHomeDirectory
-#endif
-  )
+import           System.Directory (createDirectoryIfMissing)
 import           System.Environment (getProgName, getArgs)
 import           System.Exit (exitFailure)
-#if !MIN_VERSION_directory(1,2,3)
-import           System.FilePath ((</>))
-#endif
 import           System.IO (Handle, hPutStrLn, stdout, stderr, withFile, IOMode(WriteMode))
 
+import           Cache
 import           Config
 import           Auth
 import           Collection
@@ -104,15 +95,11 @@ main = do
   auth <- loadAuth optAuth
   HTTPS.setGlobalManager =<< HTTP.newManager (applyAuth auth $ HTTPS.mkManagerSettings (TLSSettingsSimple True False False) Nothing)
 
-  cache <- maybe 
-#if MIN_VERSION_directory(1,2,3)
-    (getXdgDirectory XdgCache "primo-endpoint")
-#else
-    ((</> ".cache" </> "primo-endpoint") <$> getHomeDirectory)
-#endif
+  cdir <- maybe
+    defaultCacheDir
     return optCache
-  createDirectoryIfMissing True cache
-  config <- loadConfig optForce cache optConfig optVerbose
+  createDirectoryIfMissing True cdir
+  config <- loadConfig optForce cdir optConfig optVerbose
 
   c <- mapM (\c -> maybe (fail $ "collection key not found: " ++ c) return
     $ HMap.lookup (T.pack c) $ configCollections config) optCollection
