@@ -74,6 +74,7 @@ fdaRequest = HTTP.addRequestHeader HTTP.hAccept "application/json"
   $ HTTP.parseRequest_ "https://archive.nyu.edu/rest/collections"
 
 loadFDAIndex :: Int -> IO (HMap.HashMap Int Int)
+loadFDAIndex 0 = return HMap.empty
 loadFDAIndex z =
   V.foldl' (\m c -> HMap.insert (fdaHandleSuffix $ fdaCollectionHandle c) (fdaCollectionId c) m) HMap.empty
     . HTTP.responseBody <$> HTTP.httpJSON (HTTP.setQueryString [("limit",Just $ BSC.pack $ show z)] fdaRequest)

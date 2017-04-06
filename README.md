@@ -41,6 +41,8 @@ Each collection can have one of the following source values to specify the endpo
 * SDR: `https://geo.nyu.edu/catalog`
 * SpecialCollections: `https://specialcollections.library.nyu.edu/search/catalog.json`
   requires `filters` object mapping field to value
+* JSON: raw JSON file with array of documents in native key-value format;
+  requires `file` or `url`; mainly for testing purposes
 
 #### Fields
 

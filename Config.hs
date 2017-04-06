@@ -21,6 +21,7 @@ import qualified Data.Text.Encoding as TE (encodeUtf8)
 import           Data.Time.Clock (NominalDiffTime, getCurrentTime, diffUTCTime)
 import qualified Data.Vector as V
 import qualified Data.Yaml as YAML
+import           Network.URI (URI, parseAbsoluteURI)
 import           System.FilePath ((</>), (<.>))
 import           Text.Read (readMaybe)
 
@@ -28,6 +29,7 @@ import           Util
 import           Document
 import           Fields
 import           ISO639
+import           Source.JSON
 import           Source.FDA
 import           Source.DLTS
 import           Source.DLib
@@ -44,8 +46,8 @@ data PreConfig = PreConfig
 
 instance JSON.FromJSON PreConfig where
   parseJSON = JSON.withObject "pre-config" $ \o -> PreConfig
-    <$> o JSON..: "interval"
-    <*> (o JSON..: "fda" >>= (JSON..: "collections"))
+    <$> o JSON..:? "interval" JSON..!= 0
+    <*> (o JSON..:? "fda" JSON..!= HMap.empty >>= (JSON..!= 0) . (JSON..:? "collections"))
 
 -- |Cached indices for converting to collection identifiers.
 -- Currenly only used for FDA.
@@ -60,7 +62,8 @@ loadIndices conf = Indices
 -- |Possible metadata sources.
 -- These correspond to modules in "Source" and the collection source config key.
 data Source
-  = SourceFDA Int
+  = SourceJSON URI
+  | SourceFDA Int
   | SourceDLTS DLTSCore T.Text
   | SourceDLib BS.ByteString
   | SourceSDR
@@ -100,8 +103,12 @@ fixLanguage iso = HMap.adjust (languageGenerator iso) "language"
 
 -- |@parseSource collection source_type@
 parseSource :: Env -> JSON.Object -> T.Text -> JSON.Parser Source
+parseSource _ o "JSON" = SourceJSON
+  <$> (maybe (maybe (fail "Invalid URI") return . parseAbsoluteURI =<< o JSON..: "url")
+    (return . fileURI) =<< o JSON..:? "file")
 parseSource env o "FDA" = SourceFDA
-  <$> (maybe (o JSON..: "id") (\h -> maybe (fail "Unknown FDA handle") return $ HMap.lookup h (fdaIndex $ envIndices env)) =<< o JSON..:? "hdl")
+  <$> (maybe (o JSON..: "id")
+    (\h -> maybe (fail "Unknown FDA handle") return $ HMap.lookup h (fdaIndex $ envIndices env)) =<< o JSON..:? "hdl")
 parseSource _ o "DLTS" = SourceDLTS
   <$> o JSON..: "core"
   <*> o JSON..: "code"
@@ -178,6 +185,7 @@ loadSource Config{ configVerbose = verb } c = do
   when (V.null r) $ fail $ cs ++ ": no documents returned"
   return r
   where
+  ls (SourceJSON u) = loadJSON u
   ls (SourceFDA i) = loadFDA i
   ls (SourceDLTS s i) = loadDLTS s i fl
   ls (SourceDLib p) = loadDLib p

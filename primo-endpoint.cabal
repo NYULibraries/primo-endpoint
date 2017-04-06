@@ -28,6 +28,7 @@ executable primo-endpoint
     Fields
     Config
     Cache
+    Source.JSON
     Source.Solr
     Source.Blacklight
     Source.FDA
