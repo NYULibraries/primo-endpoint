@@ -1,5 +1,7 @@
 # Primo Endpoint
 
+[![Build Status](https://travis-ci.org/NYULibraries/primo-endpoint.svg?branch=master)](https://travis-ci.org/NYULibraries/primo-endpoint)
+
 Configurable metadata aggregator and crosswalk for NYU Libraries collections designed to populate Primo.
 Can run as a web server and dynamically update document cache.
 
