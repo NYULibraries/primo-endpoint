@@ -17,7 +17,7 @@ import qualified Network.Wai.Middleware.RequestLogger as Log
 import           Network.Wai.Parse (parseHttpAccept)
 
 import           Config
-import           Cache
+import           Collection
 import           Output
 
 formatDate :: UTCTime -> BSC.ByteString

@@ -36,6 +36,7 @@ executable primo-endpoint
     Source.DLib
     Source.SDR
     Source.SpecialCollections
+    Collection
     Output.HTML
     Output.Primo
     Output.MODS

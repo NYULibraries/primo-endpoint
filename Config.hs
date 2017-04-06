@@ -8,9 +8,9 @@ module Config
   , loadSource
   ) where
 
+import           Control.Applicative ((<|>))
 import           Control.Arrow ((***))
-import           Control.Monad (guard, when, liftM2)
-import           Control.Monad.Trans.Maybe (MaybeT(..))
+import           Control.Monad (guard, when)
 import qualified Data.Aeson.Types as JSON
 import qualified Data.ByteString as BS
 import qualified Data.HashMap.Strict as HMap
@@ -18,14 +18,14 @@ import           Data.Maybe (fromMaybe)
 import           Data.Monoid ((<>))
 import qualified Data.Text as T
 import qualified Data.Text.Encoding as TE (encodeUtf8)
-import           Data.Time.Clock (NominalDiffTime, getCurrentTime, diffUTCTime)
+import           Data.Time.Clock (NominalDiffTime, getCurrentTime, addUTCTime)
 import qualified Data.Vector as V
 import qualified Data.Yaml as YAML
 import           Network.URI (URI, parseAbsoluteURI)
 import           System.FilePath ((</>), (<.>))
-import           Text.Read (readMaybe)
 
 import           Util
+import           Cache
 import           Document
 import           Fields
 import           ISO639
@@ -40,20 +40,28 @@ type Interval = NominalDiffTime
 
 -- |Bootstrapping configuration values, needed to load the rest of the config file.
 data PreConfig = PreConfig
-  { configInterval :: Interval
+  { configInterval :: Maybe Interval
   , configFDACollections :: Int
   }
 
 instance JSON.FromJSON PreConfig where
   parseJSON = JSON.withObject "pre-config" $ \o -> PreConfig
-    <$> o JSON..:? "interval" JSON..!= 0
+    <$> o JSON..:? "interval"
     <*> (o JSON..:? "fda" JSON..!= HMap.empty >>= (JSON..!= 0) . (JSON..:? "collections"))
 
 -- |Cached indices for converting to collection identifiers.
 -- Currenly only used for FDA.
 data Indices = Indices
   { fdaIndex :: HMap.HashMap Int Int -- ^map from FDA handle suffix to database id
-  } deriving (Show, Read)
+  }
+
+instance JSON.ToJSON Indices where
+  toJSON     i = JSON.object ["fda" JSON..= fdaIndex i]
+  toEncoding i = JSON.pairs  ("fda" JSON..= fdaIndex i)
+
+instance JSON.FromJSON Indices where
+  parseJSON = JSON.withObject "indices" $ \o -> Indices
+    <$> o JSON..: "fda"
 
 loadIndices :: PreConfig -> IO Indices
 loadIndices conf = Indices
@@ -73,7 +81,7 @@ data Collection = Collection
   { collectionKey :: !T.Text -- ^Unique key for this collection
   , collectionSource :: !Source
   , collectionCache :: FilePath -- ^JSON cache file for processed 'Document's
-  , collectionInterval :: !Interval -- ^Max cache file age before reloading
+  , collectionInterval :: Maybe Interval -- ^Max cache file age before reloading
   , collectionName :: Maybe T.Text
   , collectionFields :: Generators -- ^Metadata field mapping
   }
@@ -131,7 +139,7 @@ parseCollection env key = JSON.withObject "collection" $ \o -> do
     { collectionKey = key
     , collectionCache = envCache env </> T.unpack key <.> "json"
     , collectionSource = s
-    , collectionInterval = fromMaybe (configInterval $ envPreConfig env) i
+    , collectionInterval = i <|> configInterval (envPreConfig env)
     , collectionName = n
     , collectionFields = fixLanguage (envISO639 env) $ f <> t
     }
@@ -151,26 +159,20 @@ parseConfig env = JSON.withObject "config" $ \o -> do
     }
 
 updateIndices :: Bool -> PreConfig -> FilePath -> IO Indices
-updateIndices force pc f = maybe (do
-    idx <- loadIndices pc
-    writeFile f $ show idx
-    return idx)
-  return =<< runMaybeT (do
-    guard $ not force
-    d <- MaybeT $ Just <$> liftM2 diffUTCTime getCurrentTime (getModificationTime0 f)
-    guard $ d < configInterval pc
-    MaybeT $ readMaybe <$> readFile f)
+updateIndices force pc f = do
+  t <- getCurrentTime
+  cache f ((`addUTCTime` t) . negate <$> (guard (not force) >> configInterval pc)) $ loadIndices pc
 
 -- @loadConfig force cacheDir confFile@
 loadConfig :: Bool -> FilePath -> FilePath -> Bool -> IO Config
-loadConfig force cache conf verb = do
+loadConfig force cdir conf verb = do
   jc <- fromMaybe JSON.Null <$> YAML.decodeFile conf
   pc <- parseJSONM jc
-  idx <- updateIndices force pc (cache </> "index")
-  iso <- loadISO639 (cache </> "iso639")
+  idx <- updateIndices force pc (cdir </> "index.json")
+  iso <- loadISO639 (cdir </> "iso639")
   parseM (parseConfig Env
     { envPreConfig = pc
-    , envCache = cache
+    , envCache = cdir
     , envISO639 = iso
     , envIndices = idx
     , envGenerators = HMap.empty

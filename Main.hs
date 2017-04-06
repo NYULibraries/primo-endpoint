@@ -30,7 +30,7 @@ import           System.IO (Handle, hPutStrLn, stdout, stderr, withFile, IOMode(
 
 import           Config
 import           Auth
-import           Cache
+import           Collection
 import           Output.Primo
 import           Output.MODS
 import           Server
