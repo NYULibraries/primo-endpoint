@@ -256,3 +256,8 @@ collections:
           - collection_ssm
           - parent_unittitles_ssm
         join: ": "
+  isaw:
+    source: ISAW
+    name: "ISAW"
+    fields:
+      collection: _name
