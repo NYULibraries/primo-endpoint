@@ -1,1 +1,7 @@
-resolver: lts-8.8
+resolver: lts-8.13
+packages:
+- '.'
+- location:
+    git: git://github.com/dylex/zip-stream
+    commit: master
+  extra-dep: true

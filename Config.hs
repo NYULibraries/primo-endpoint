@@ -35,6 +35,7 @@ import           Source.DLTS
 import           Source.DLib
 import           Source.SDR
 import           Source.SpecialCollections
+import           Source.ISAW
 
 type Interval = NominalDiffTime
 
@@ -76,6 +77,7 @@ data Source
   | SourceDLib BS.ByteString
   | SourceSDR
   | SourceSpecialCollections [(BS.ByteString, BS.ByteString)]
+  | SourceISAW
 
 data Collection = Collection
   { collectionKey :: !T.Text -- ^Unique key for this collection
@@ -125,6 +127,7 @@ parseSource _ o "DLib" = SourceDLib
 parseSource _ _ "SDR" = return SourceSDR
 parseSource _ o "SpecialCollections" = SourceSpecialCollections
   <$> (map (TE.encodeUtf8 *** TE.encodeUtf8) . HMap.toList <$> o JSON..: "filters")
+parseSource _ _ "ISAW" = return SourceISAW
 parseSource _ _ s = fail $ "Unknown collection source: " ++ show s
 
 -- |@parseCollection generators templates key value@
@@ -193,5 +196,6 @@ loadSource Config{ configVerbose = verb } c = do
   ls (SourceDLib p) = loadDLib p
   ls SourceSDR = loadSDR
   ls (SourceSpecialCollections f) = loadSpecialCollections f
+  ls SourceISAW = loadISAW
   fl = generatorsFields $ collectionFields c
   cs = T.unpack $ collectionKey c

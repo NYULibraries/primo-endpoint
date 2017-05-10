@@ -36,6 +36,7 @@ executable primo-endpoint
     Source.DLib
     Source.SDR
     Source.SpecialCollections
+    Source.ISAW
     Collection
     Output.HTML
     Output.Primo
@@ -58,6 +59,9 @@ executable primo-endpoint
     vector,
     aeson >= 1,
     blaze-html,
+    conduit,
+    conduit-combinators,
+    conduit-extra,
     connection,
     network-uri,
     http-client >= 0.5,
@@ -70,7 +74,8 @@ executable primo-endpoint
     warp,
     xml-conduit,
     xml-hamlet >= 0.4.1,
-    yaml
+    yaml,
+    zip-stream
 
 test-suite test
   type: exitcode-stdio-1.0
