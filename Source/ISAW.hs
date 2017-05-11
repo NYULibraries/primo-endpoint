@@ -24,7 +24,7 @@ isawRequest = HTTP.parseRequest_ "http://isaw.nyu.edu/publications/awol-index/aw
 parseISAW :: JSON.Value -> JSON.Parser (Maybe Document)
 parseISAW = JSON.withObject "isaw json" $ \o -> return $
   case HMap.lookupDefault JSON.Null "is_part_of" o of
-    JSON.Null -> Just $ HMap.mapMaybe parseJSONM o
+    JSON.Null -> Just $ parseNestedMetadata "." "" $ JSON.Object $ HMap.delete "provenance" o
     _ -> Nothing
 
 whileRight :: Monad m => C.Conduit (Either a b) m b

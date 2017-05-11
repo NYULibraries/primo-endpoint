@@ -62,7 +62,7 @@ instance Monoid Generator where
 -- |Generate a single 'Value' given a set of input metadata values and a field 'Generator'
 generate :: Metadata -> Generator -> Value
 generate _ (GeneratorString x) = value x
-generate m (GeneratorField f) = HMap.lookupDefault mempty f m
+generate m (GeneratorField f) = getMetadata m f
 generate m (GeneratorMap f g) = f $ generate m g
 generate m (GeneratorList l) = foldMap (generate m) l
 generate m (GeneratorOr g d) = generate m g `valueOr` generate m d
@@ -73,7 +73,7 @@ generate m (GeneratorPaste (g:l)) = Value
   | x <- values $ generate m g
   , y <- values $ generate m (GeneratorPaste l)
   ]
-generate m (GeneratorWith gm g) = generate (HMap.map (generate m) gm) g
+generate m (GeneratorWith gm g) = generate (generateFields gm m) g
 
 -- |Collect the set of input fields consumed by a generator
 generatorFields :: Generator -> HSet.HashSet T.Text

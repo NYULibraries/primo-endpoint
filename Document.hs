@@ -17,8 +17,8 @@ module Document
   , Metadata
   , getMetadata
   , addMetadata
+  , parseNestedMetadata
   , Document
-  , mkDocument
   , Documents
   , handleToID
   ) where
@@ -134,17 +134,26 @@ type Metadata = HMap.HashMap T.Text Value
 
 -- |Lookup a single field value, or the empty value if missing
 getMetadata :: Metadata -> T.Text -> Value
-getMetadata m k = fold $ HMap.lookup k m
+getMetadata m k = HMap.lookupDefault mempty k m
 
 -- |Add a field value, appending it to any existing value
 addMetadata :: Metadata -> T.Text -> Value -> Metadata
 addMetadata m k v = HMap.insertWith (flip mappend) k v m
 
+-- |Parse an arbitrary structure into flattened 'Metadata', concatenating in arrays, and creating sub-keys in objects by joining with the given separator.
+-- Any produced fields are prefixed with the second argument (followed by a separator if non-null).
+parseNestedMetadata :: T.Text -> T.Text -> JSON.Value -> Metadata
+parseNestedMetadata _ _ JSON.Null = HMap.empty
+parseNestedMetadata sep pfx (JSON.Object o) = HMap.foldrWithKey (\k ->
+  HMap.unionWith mappend . parseNestedMetadata sep (pfx' <> k)) mempty o
+  where pfx' | T.null pfx = pfx
+             | otherwise = pfx <> sep
+parseNestedMetadata sep pfx (JSON.Array l) = V.foldr
+  (HMap.unionWith mappend . parseNestedMetadata sep pfx) mempty l
+parseNestedMetadata _ k v = HMap.singleton k $ parseValue v
+
 type Document = Metadata
 type Documents = V.Vector Document
-
-mkDocument :: T.Text -> T.Text -> Metadata -> Document
-mkDocument i c = HMap.insert "id" (value i) . HMap.insert "collection" (value c)
 
 -- |Convert a handle URL like @http://hdl.handle.net/x/y@ to a 'documentID' like @hdl-handle-net-x-y@.
 handleToID :: Monad m => T.Text -> m T.Text
