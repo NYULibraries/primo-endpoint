@@ -261,3 +261,10 @@ collections:
     name: "ISAW"
     fields:
       collection: _name
+      id:
+        paste:
+        - _key
+        - ":"
+        - domain
+        - "/"
+        - resource_key
