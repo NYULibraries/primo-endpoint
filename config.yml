@@ -93,10 +93,6 @@ collections:
     source: FDA
     hdl: 34767
     template: traditional
-  kate:
-    source: FDA
-    hdl: 34600
-    template: traditional
   ngo:
     source: FDA
     hdl: 33605
