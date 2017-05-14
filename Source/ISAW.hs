@@ -15,7 +15,6 @@ import qualified Data.HashMap.Strict as HMap
 import qualified Network.HTTP.Simple as HTTP
 import qualified Codec.Archive.Zip.Conduit.UnZip as Z
 
-import           Util
 import           Document
 
 isawRequest :: HTTP.Request
@@ -44,4 +43,4 @@ streamISAW = mapM_ (\e -> entry e >> streamISAW) =<< C.await where
 
 loadISAW :: IO Documents
 loadISAW = HTTP.httpSink isawRequest $ \_ ->
-  void Z.unZip C..| streamISAW C..| CC.sinkVector
+  void Z.unZipStream C..| streamISAW C..| CC.sinkVector
