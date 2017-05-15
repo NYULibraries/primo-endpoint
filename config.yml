@@ -5,16 +5,6 @@ fda:
   collections: 1000
 # generator "macro" functions that can be used as generator keys, passing arguments as an object
 generators:
-  # special generator for joining "date:publisher,place"
-  publisher:
-    paste:
-    - field: place
-      default: ""
-    - ":"
-    - name
-    - ","
-    - field: date
-      default: ""
 # field templates. each collection can have 0 or more templates that are unioned, along with custom fields that take precedence
 templates:
   # standard translations for dublin core, as used in FDA
@@ -103,21 +93,17 @@ collections:
     source: FDA
     hdl: 34767
     template: traditional
-  kate:
-    source: FDA
-    hdl: 34600
-    template: traditional
   ngo:
     source: FDA
     hdl: 33605
     template: traditional
     fields:
       publisher:
-        # use custom generator, defined above
-        publisher:
-          place: dc.publisher.place
-          name: dc.publisher
-          date: dc.date.issued
+        paste:
+        - field: dc.publisher.place
+          default: ""
+        - ":"
+        - dc.publisher
       type:
         # fixed value
         string: "Report"

@@ -14,7 +14,11 @@ import           Control.Monad (liftM2)
 import qualified Data.Aeson as JSON
 import qualified Data.ByteString.Lazy.Char8 as BSLC
 import           Data.Time.Clock (UTCTime)
-import           System.FilePath ((<.>), splitFileName)
+import           System.FilePath ((<.>), splitFileName
+#if !MIN_VERSION_directory(1,2,3)
+  , (</>)
+#endif
+  )
 import           System.Directory (removeFile, renameFile
 #if MIN_VERSION_directory(1,2,3)
   , getXdgDirectory, XdgDirectory(XdgCache)
