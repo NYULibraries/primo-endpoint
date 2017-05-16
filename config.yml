@@ -242,15 +242,28 @@ collections:
           - collection_ssm
           - parent_unittitles_ssm
         join: ": "
-  isaw:
+  awol:
     source: ISAW
-    name: "ISAW"
+    name: "AWOL"
     fields:
       collection: _name
       id:
         paste:
-        - _key
+        - string: 'awol' 
         - ":"
         - domain
         - "/"
         - resource_key
+      title: title
+      language: languages
+      subject: keywords 
+      description: description
+      available: url 
+      identifier: 
+          - identifiers.issn.generic
+          - identifiers.issn.electronic
+      author: authors
+      contributor:
+          - contributors
+          - editors
+      dc_subject_spatial: places

@@ -24,6 +24,7 @@ $doctype 5
         <a href=/#{foldMap collectionKey coll}?fmt=mods>MODS
         #{n} documents
       $forall d <- l
+        <hr>
         <h3>#{getMetadata d "id"}
         #{htmlDocument $ HMap.delete "id" d}
       <div>
