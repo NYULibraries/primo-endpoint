@@ -40,9 +40,10 @@ Each collection can have one of the following source values to specify the endpo
   requires `core` (`core` (none), `viewer`, or `nyupress`) and `code` (collection code)
 * DLib: `http://dlib.nyu.edu/$path`
   requires `path`
-* SDR: `https://geo.nyu.edu/catalog`
+* SDR: `https://geo.nyu.edu/catalog` (filtered on `dct_provenance_s=NYU`)
 * SpecialCollections: `https://specialcollections.library.nyu.edu/search/catalog.json`
   requires `filters` object mapping field to value
+* ISAW: `http://isaw.nyu.edu/publications/awol-index/awol-index-json.zip` (filtered on `is_part_of=null`)
 * JSON: raw JSON file with array of documents in native key-value format;
   requires `file` or `url`; mainly for testing purposes
 
