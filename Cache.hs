@@ -1,12 +1,13 @@
 {-# LANGUAGE CPP #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-}
+{-# LANGUAGE ViewPatterns #-}
 module Cache
   ( defaultCacheDir
   , cache
   ) where
 
-import           Control.Exception (SomeException, bracketOnError, try, throwIO)
+import           Control.Exception (SomeException, bracketOnError, tryJust, throwIO, fromException, SomeAsyncException(..))
 #if MIN_VERSION_base(4,8,0)
 import           Control.Exception (displayException)
 #endif
@@ -93,7 +94,9 @@ cache f mt g
   where
   fe = f <.> "err" -- error file
   load e = either e return . JSON.eitherDecode =<< BSLC.readFile f
-  update fall = try g >>= either
+  notasync (fromException -> Just (SomeAsyncException _)) = Nothing
+  notasync e = Just e
+  update fall = tryJust notasync g >>= either
     (\e -> do -- write error file
       let s = displayException (e :: SomeException)
       hPutStrLn stderr $ f ++ ": " ++ s

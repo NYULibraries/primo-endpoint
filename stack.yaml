@@ -1,3 +1,3 @@
-resolver: lts-8.13
+resolver: lts-8.14
 extra-deps:
-- zip-stream-0.1
+- zip-stream-0.1.0.1
