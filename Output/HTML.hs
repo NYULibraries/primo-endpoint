@@ -12,6 +12,7 @@ import qualified Data.ByteString.Builder as BSB
 import qualified Data.ByteString.Char8 as BSC
 import           Data.Function (on)
 import qualified Data.HashMap.Strict as HMap
+import           Data.List (sortOn)
 import           Data.Maybe (fromMaybe, isJust, isNothing)
 import           Data.Monoid ((<>))
 import qualified Data.Text as T
@@ -24,11 +25,6 @@ import           Text.Read (readMaybe)
 
 import           Config
 import           Document
-
-htmlDocument :: Document -> H.Html
-htmlDocument m = H.dl
-  $ HMap.foldrWithKey (\k v -> mappend $ H.dt (H.text k) <> H.dd (H.toMarkup v))
-    mempty m
 
 outputHTML :: Config -> Maybe Collection -> Query -> Bool -> Documents -> BSB.Builder
 outputHTML conf coll q orig docs = renderHtmlBuilder
