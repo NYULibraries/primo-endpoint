@@ -14,12 +14,10 @@ import           Data.Function (on)
 import qualified Data.HashMap.Strict as HMap
 import           Data.List (sortOn)
 import           Data.Maybe (fromMaybe, isJust, isNothing)
-import           Data.Monoid ((<>))
 import qualified Data.Text as T
 import qualified Data.Vector as V
 import           Network.HTTP.Types.URI (Query)
 import           Text.Blaze.Html.Renderer.Utf8 (renderHtmlBuilder)
-import qualified Text.Blaze.Html5 as H
 import           Text.Hamlet (hamlet, hamletFile)
 import           Text.Read (readMaybe)
 
