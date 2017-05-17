@@ -5,6 +5,17 @@
 Configurable metadata aggregator and crosswalk for NYU Libraries collections designed to populate Primo.
 Can run as a web server and dynamically update document cache.
 
+## Production
+
+```
+> docker build -t primo-endpoint .
+> docker run -p 80 primo-endpoint
+```
+
+Logs to stdout by default.  Startup can be optimized by persisting the /cache volume.
+
+## Development
+
 ### Installation
 
 ```
