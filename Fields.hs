@@ -1,6 +1,7 @@
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE TypeSynonymInstances #-}
+{-# LANGUAGE ViewPatterns #-}
 module Fields
   ( Generators
   , fieldGenerator
@@ -11,7 +12,7 @@ module Fields
   ) where
 
 import qualified Data.Aeson.Types as JSON
-import           Data.Char (isAlpha)
+import           Data.Char (isAlphaNum)
 import qualified Data.HashMap.Lazy as HMapL
 import qualified Data.HashMap.Strict as HMap
 import qualified Data.HashSet as HSet
@@ -100,12 +101,40 @@ generateFields g m = HMap.map (generate m) g
 generatorsFields :: Generators -> HSet.HashSet T.Text
 generatorsFields = foldMap generatorFields
 
+-- |Do we consider this character a normal part of a field name?  (This is just a heuristic -- any character is valid in a field name.)
+isFieldChar :: Char -> Bool
+isFieldChar '_' = True
+isFieldChar '.' = True
+isFieldChar c = isAlphaNum c
+
+-- |Parse a string with \$field substitutions.
+parseSubst :: Monad m => T.Text -> m Generator
+parseSubst = fmap (simplify . merge) . subst where
+  simplify [] = GeneratorString T.empty
+  simplify [x] = x
+  simplify l = GeneratorPaste l
+  merge (GeneratorString a : GeneratorString b : r) =
+    merge (GeneratorString (a <> b) : r)
+  merge (x : r) = x : merge r
+  merge [] = []
+  subst "" = return []
+  subst (T.breakOn "$" -> (p, d)) =
+    (if T.null p then id else (GeneratorString p :))
+    <$> case T.uncons d of
+      Nothing -> return []
+      Just (~'$', b) -> case T.uncons b of
+        Just ('$', r) -> (GeneratorString (T.singleton '$') :) <$> subst r
+        Just ('{', (T.break ('}' ==) -> (v, T.uncons -> Just (~'}', r)))) -> (GeneratorField v :) <$> subst r
+        Just (c, T.span isFieldChar -> (v, r)) | isFieldChar c -> (GeneratorField (c `T.cons` v) :) <$> subst r
+        _ -> fail "trailing/unterminated '$': expecting ${field}, $field, or $$"
+
 -- |Parse a single field from a JSON object as a generator
 parseGeneratorKey :: Generators -> T.Text -> JSON.Value -> JSON.Parser Generator
 parseGeneratorKey _ "field" v =
   JSON.withText "field name" (return . GeneratorField) v
 parseGeneratorKey _ "string" v =
   JSON.withText "string literal" (return . GeneratorString) v
+parseGeneratorKey _ "paste" (JSON.String s) = parseSubst s
 parseGeneratorKey g "paste" v =
   JSON.withArray "paste components" (fmap GeneratorPaste . mapM (parseGenerator g) . V.toList) v
 parseGeneratorKey g "handle" v =
@@ -136,9 +165,8 @@ parseGeneratorObject g = run handlers where
 -- |Parse a generator, given the macros in scope
 parseGenerator :: Generators -> JSON.Value -> JSON.Parser Generator
 parseGenerator _ (JSON.String f)
-  | Just (h, _) <- T.uncons f -- heuristics for valid field names
-  , isAlpha h || h == '_' = return $ GeneratorField f
-parseGenerator _ (JSON.String s) = return $ GeneratorString s
+  | not (T.null f) && T.all isFieldChar f = return $ GeneratorField f
+parseGenerator _ (JSON.String s) = parseSubst s
 parseGenerator _ JSON.Null = return $ mempty
 parseGenerator g (JSON.Array l) = GeneratorList <$> mapM (parseGenerator g) (V.toList l)
 parseGenerator g (JSON.Object o) = parseGeneratorObject g o

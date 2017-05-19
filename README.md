@@ -65,7 +65,7 @@ Field definitions are made up of the following:
     * Single fields, which are processed independently and then combined (as if in an array):
         * `field`: name of source field to copy
         * `string`: string literal to create single value
-        * `paste`: list of definitions, the resulting strings are pasted together (no delimiter) as a cross-product (so the number of resulting values is the product of the number of values from each element)
+        * `paste`: list of definitions, or string with `$field` or `${field}` placeholders to substitute (`$$` for a literal `$`); the resulting strings are pasted together (no delimiter) as a cross-product (so the number of resulting values is the product of the number of values from each element)
         * `handle`: definition. Convert a string of the form "http://hdl.handle.net/XXX/YYY.ZZZ" to "hdl-handle-net-XXX-YYY-ZZZ".  Any non-matching input is discarded.
         * `value`: any definition (for convenient nesting)
         * generator name: key-definition arguments as object. Substitutes a generator "macro" from the generator section, assigning the given keys to their corresponding values as input fields to the macro.  The generator can also see any other input fields as well.
@@ -76,8 +76,8 @@ Field definitions are made up of the following:
         * `default`: definition. If there are no produced input values, provide the definition instead.
         * `join`: string literal delimiter. Paste all the inputs together, separated by the given delimiter.  Always produces exactly one output.
 * Array: all produced values are merged, producing the sum of all the input values.
-* String literal starting with letter or "\_": passed to `field`
-* Any other string literal: passed to `string`
+* String literal containing only `.`, `_`, and alphanumerics: passed to `field`
+* Any other string literal: passed to `paste`
 * Null: same as empty array (produces 0 values)
 
 There are two special input fields added to every source document:
