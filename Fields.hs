@@ -142,16 +142,16 @@ parseGeneratorKey g "handle" v =
 parseGeneratorKey g "value" v = parseGenerator g v
 parseGeneratorKey g k JSON.Null | Just m <- HMap.lookup k g = return m -- macro with no arguments
 parseGeneratorKey g k v | Just m <- HMap.lookup k g = -- macro with arguments
-  JSON.withObject "generator arguments" (fmap (`GeneratorWith` m) . mapM (parseGenerator $ HMap.delete k g)) v
+  JSON.withObject "generator arguments" (fmap (`GeneratorWith` m) . mapM (inField k . parseGenerator (HMap.delete k g))) v
 parseGeneratorKey _ k _ = fail $ "Unknown field generator: " ++ show k
 
 -- |Parse a JSON object as a generator
 -- Some fields are handled specially (handlers), while the rest are passed to 'parseGeneratorKey' and merged.
 parseGeneratorObject :: Generators -> JSON.Object -> JSON.Parser Generator
 parseGeneratorObject g = run handlers where
-  run [] o = foldMapM (uncurry $ parseGeneratorKey g) (HMap.toList o)
+  run [] o = foldMapM (\(k,v) -> inField k $ parseGeneratorKey g k v) (HMap.toList o)
   run ((f, h) : r) o
-    | Just x <- HMap.lookup f o = h x =<< run r (HMap.delete f o)
+    | Just x <- HMap.lookup f o = inField f . h x =<< run r (HMap.delete f o)
     | otherwise = run r o
   handlers =
     [ ("join", gmap $ \j (Value l) -> if null l then Value l else value $ T.intercalate j l)
@@ -177,4 +177,4 @@ instance JSON.FromJSON Generator where
 
 -- |Parse a cross-walk configuration as a set of field generators, given a set of generator macros.
 parseGenerators :: Generators -> JSON.Value -> JSON.Parser Generators
-parseGenerators g v = withObjectOrNull "field generators" (mapM $ parseGenerator g) v
+parseGenerators g v = withObjectOrNull "field generators" (HMap.traverseWithKey $ \k -> inField k . parseGenerator g) v

@@ -10,15 +10,18 @@ module Util
   , withArrayOrNullOrSingleton
   , parseM
   , parseJSONM
+  , inField
   , addRequestPath
   ) where
 
 import           Control.Exception (handleJust)
 import           Control.Monad (guard)
+import qualified Data.Aeson.Internal as JSONI ((<?>), JSONPathElement(Key))
 import qualified Data.Aeson.Types as JSON
 import qualified Data.ByteString.Char8 as BSC
 import           Data.Foldable (foldlM)
 import           Data.Monoid ((<>))
+import qualified Data.Text as T
 import           Data.Time.Clock (UTCTime(..))
 import qualified Data.Vector as V
 import qualified Network.HTTP.Client as HTTP
@@ -61,6 +64,9 @@ parseM f = either fail return . JSON.parseEither f
 
 parseJSONM :: (Monad m, JSON.FromJSON a) => JSON.Value -> m a
 parseJSONM = parseM JSON.parseJSON
+
+inField :: T.Text -> JSON.Parser a -> JSON.Parser a
+inField f = (JSONI.<?> JSONI.Key f)
 
 addRequestPath :: HTTP.Request -> BSC.ByteString -> HTTP.Request
 addRequestPath q p = q{ HTTP.path = HTTP.path q <> BSC.cons '/' p }

@@ -151,7 +151,7 @@ parseConfig :: Env -> JSON.Value -> JSON.Parser Config
 parseConfig env = JSON.withObject "config" $ \o -> do
   g <- o JSON..:? "generators" JSON..!= mempty
   t <- withObjectOrNull "templates" (mapM $ parseGenerators g) =<< o JSON..:? "templates" JSON..!= JSON.Null
-  c <- JSON.withObject "collections" (HMap.traverseWithKey $ parseCollection env{ envGenerators = g <> envGenerators env, envTemplates = t <> envTemplates env })
+  c <- JSON.withObject "collections" (HMap.traverseWithKey $ \k -> inField k . parseCollection env{ envGenerators = g <> envGenerators env, envTemplates = t <> envTemplates env } k)
     =<< o JSON..: "collections"
   return Config
     { configCollections = c
