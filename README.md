@@ -39,7 +39,19 @@ Usage: primo-endpoint [OPTION...]
 
 ### Config
 
-See `config.yml`.
+The configuration is read from a YAML (or JSON) file with the following structure:
+
+* `interval`: number of seconds for which to cache collections before reloading (by default)
+* `fda`: FDA-specific configuration options:
+    * `collections`: maximum number of collections to load from index to use in translating `hdl`s to `id`s
+* `generators`: a set of named generator "macro" functions that can be used as generator keys, substituting passed object arguments for input fields
+* `templates`: a set of named field generator templates, each of which contains a set of field generators
+* `collections`: a set of named collections, each with the following fields:
+    * `source`: a source type (see below), which may also take additional arguments on the collection object
+    * `template`: optional string or array of 0 or more templates (referencing names in the `templates` object), which are all unioned together
+    * `fields`: additional local "custom" generator fields for this collection
+
+See `config.yml` for an example.
 
 #### Sources
 
