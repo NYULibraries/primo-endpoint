@@ -226,13 +226,7 @@ collections:
     name: "AWOL"
     fields:
       collection: _name
-      id:
-        paste:
-        - string: 'awol' 
-        - ":"
-        - domain
-        - "/"
-        - resource_key
+      id: "$_key:$domain/$resource_key"
       title: title
       language: languages
       subject: keywords 
