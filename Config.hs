@@ -85,7 +85,7 @@ data Collection = Collection
   , collectionCache :: FilePath -- ^JSON cache file for processed 'Document's
   , collectionInterval :: Maybe Interval -- ^Max cache file age before reloading
   , collectionName :: Maybe T.Text
-  , collectionFields :: Generators -- ^Metadata field mapping
+  , collectionFields :: FieldGenerators -- ^Metadata field mapping
   }
 
 -- |Map from 'collectionKey' to 'Collection'
@@ -103,13 +103,13 @@ data Env = Env
   , envCache :: !FilePath -- ^Cache directory
   , envISO639 :: !ISO639
   , envIndices :: !Indices
-  , envGenerators :: !Generators -- ^Generator macros expanded during loading 'collectionFields'
-  , envTemplates :: !(HMap.HashMap T.Text Generators) -- ^Templates that can be included in 'collectionFields'
+  , envGenerators :: !Macros -- ^Generator macros expanded during loading 'collectionFields'
+  , envTemplates :: !(HMap.HashMap T.Text FieldGenerators) -- ^Templates that can be included in 'collectionFields'
   , envVerbose :: !Bool
   }
 
-fixLanguage :: ISO639 -> Generators -> Generators
-fixLanguage iso = HMap.adjust (languageGenerator iso) "language"
+fixLanguage :: ISO639 -> FieldGenerators -> FieldGenerators
+fixLanguage = mapGenerator "language" . languageGenerator
 
 -- |@parseSource collection source_type@
 parseSource :: Env -> JSON.Object -> T.Text -> JSON.Parser Source
@@ -133,11 +133,11 @@ parseSource _ _ s = fail $ "Unknown collection source: " ++ show s
 -- |@parseCollection generators templates key value@
 parseCollection :: Env -> T.Text -> JSON.Value -> JSON.Parser Collection
 parseCollection env key = JSON.withObject "collection" $ \o -> do
-  s <- parseSource env o =<< o JSON..: "source"
+  s <- inField "source" . parseSource env o =<< o JSON..: "source"
   i <- o JSON..:? "interval"
   n <- o JSON..:? "name"
-  f <- parseGenerators (envGenerators env) =<< o JSON..:? "fields" JSON..!= JSON.Null
-  t <- withArrayOrNullOrSingleton (foldMapM getTemplate) =<< o JSON..:? "template" JSON..!= JSON.Null
+  f <- inField "fields" . parseGenerators (envGenerators env) =<< o JSON..:? "fields" JSON..!= JSON.Null
+  t <- inField "template" . withArrayOrNullOrSingleton (foldMapM getTemplate) =<< o JSON..:? "template" JSON..!= JSON.Null
   return Collection
     { collectionKey = key
     , collectionCache = envCache env </> T.unpack key <.> "json"
@@ -153,8 +153,8 @@ parseCollection env key = JSON.withObject "collection" $ \o -> do
 parseConfig :: Env -> JSON.Value -> JSON.Parser Config
 parseConfig env = JSON.withObject "config" $ \o -> do
   g <- o JSON..:? "generators" JSON..!= mempty
-  t <- withObjectOrNull "templates" (mapM $ parseGenerators g) =<< o JSON..:? "templates" JSON..!= JSON.Null
-  c <- JSON.withObject "collections" (HMap.traverseWithKey $ parseCollection env{ envGenerators = g <> envGenerators env, envTemplates = t <> envTemplates env })
+  t <- inField "templates" . withObjectOrNull "templates" (mapM $ parseGenerators g) =<< o JSON..:? "templates" JSON..!= JSON.Null
+  c <- inField "collections" . JSON.withObject "collections" (HMap.traverseWithKey $ \k -> inField k . parseCollection env{ envGenerators = g <> envGenerators env, envTemplates = t <> envTemplates env } k)
     =<< o JSON..: "collections"
   return Config
     { configCollections = c
@@ -197,5 +197,5 @@ loadSource Config{ configVerbose = verb } c = do
   ls SourceSDR = loadSDR
   ls (SourceSpecialCollections f) = loadSpecialCollections f
   ls SourceISAW = loadISAW
-  fl = generatorsFields $ collectionFields c
+  fl = generatorFields $ collectionFields c
   cs = T.unpack $ collectionKey c

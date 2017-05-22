@@ -13,7 +13,6 @@ module Document
   , keyValueJSON
   , valueJSON'
   , keyValueJSON'
-  , valueOr
   , Metadata
   , getMetadata
   , addMetadata
@@ -55,11 +54,6 @@ oneValue v = fail $ "expecting single value: " ++ show v
 maybeValue :: Value -> Maybe Value
 maybeValue (Value []) = Nothing
 maybeValue v = Just v
-
--- |The alternative monoid append, left-biased
-valueOr :: Value -> Value -> Value
-valueOr (Value []) a = a
-valueOr a _ = a
 
 -- |Values can be parsed from any JSON type except objects
 instance JSON.FromJSON Value where

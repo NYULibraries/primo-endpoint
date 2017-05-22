@@ -26,7 +26,10 @@ $doctype 5
       $forall d <- l
         <hr>
         <h3>#{getMetadata d "id"}
-        #{htmlDocument $ HMap.delete "id" d}
+        <dl>
+          $forall (k, v) <- sortOn fst $ HMap.toList $ HMap.delete "id" d
+            <dt>#{k}
+            <dd>#{v}
       <div>
         <label>page
           $if page > 1

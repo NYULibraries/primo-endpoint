@@ -5,6 +5,17 @@
 Configurable metadata aggregator and crosswalk for NYU Libraries collections designed to populate Primo.
 Can run as a web server and dynamically update document cache.
 
+## Production
+
+```
+> docker build -t primo-endpoint .
+> docker run -p 80 primo-endpoint
+```
+
+Logs to stdout by default.  Startup can be optimized by persisting the /cache volume.
+
+## Development
+
 ### Installation
 
 ```
@@ -28,7 +39,19 @@ Usage: primo-endpoint [OPTION...]
 
 ### Config
 
-See `config.yml`.
+The configuration is read from a YAML (or JSON) file with the following structure:
+
+* `interval`: number of seconds for which to cache collections before reloading (by default)
+* `fda`: FDA-specific configuration options:
+    * `collections`: maximum number of collections to load from index to use in translating `hdl`s to `id`s
+* `generators`: a set of named generator "macro" functions that can be used as generator keys, substituting passed object arguments for input fields
+* `templates`: a set of named field generator templates, each of which contains a set of field generators
+* `collections`: a set of named collections, each with the following fields:
+    * `source`: a source type (see below), which may also take additional arguments on the collection object
+    * `template`: optional string or array of 0 or more templates (referencing names in the `templates` object), which are all unioned together
+    * `fields`: additional local "custom" generator fields for this collection
+
+See `config.yml` for an example.
 
 #### Sources
 
@@ -55,19 +78,26 @@ Field definitions are made up of the following:
     * Single fields, which are processed independently and then combined (as if in an array):
         * `field`: name of source field to copy
         * `string`: string literal to create single value
-        * `paste`: list of definitions, the resulting strings are pasted together (no delimiter) as a cross-product (so the number of resulting values is the product of the number of values from each element)
+        * `paste`: list of definitions, or string with `$field` or `${field}` placeholders to substitute (`$$` for a literal `$`); the resulting strings are pasted together (no delimiter) as a cross-product (so the number of resulting values is the product of the number of values from each element)
         * `handle`: definition. Convert a string of the form "http://hdl.handle.net/XXX/YYY.ZZZ" to "hdl-handle-net-XXX-YYY-ZZZ".  Any non-matching input is discarded.
         * `value`: any definition (for convenient nesting)
         * generator name: key-definition arguments as object. Substitutes a generator "macro" from the generator section, assigning the given keys to their corresponding values as input fields to the macro.  The generator can also see any other input fields as well.
     * Post-processors that first process the rest of the definition, and then apply a transformation on the result:
         * `date`: string [strptime format](http://hackage.haskell.org/package/time/docs/Data-Time-Format.html).  Tries to parse each value in the result with the given format and produces a timestamp in standard format (relevant prefix of "%Y-%m-%dT%H:%M:%S%QZ") as output. Any inputs that cannot be parsed are discarded.
-        * `lookup`: key-definition lookup table as object. Applies the lookup table translation to each input, substituting the right-side definition for any matching left-side key. If no key matches, the input is discarded.
+        * `match`: match input against regular expressions
+	    * A string regular expression, which filters input values against the regular expression, passing only those which match
+	    * An object "lookup table" mapping regular expressions to substitutions: each input value is matched against each regular expression, and the right-hand value substituted for each matching value. Within the substitution, the following additional field values are available:
+	        * `\`` (backtick): the input string before the (first) match
+	        * `\'` (apostrophe): the input string after the (first) match
+	        * `&`: the matching segment of the input string
+	        * `0`: same as `&`
+		* `1`...`N`: the string matched by each parenthesized group in the regular expression
         * `limit`: integer. Take only the first *n* values from the input, discarding the rest.
         * `default`: definition. If there are no produced input values, provide the definition instead.
         * `join`: string literal delimiter. Paste all the inputs together, separated by the given delimiter.  Always produces exactly one output.
 * Array: all produced values are merged, producing the sum of all the input values.
-* String literal starting with letter or "\_": passed to `field`
-* Any other string literal: passed to `string`
+* String literal containing only `.`, `_`, and alphanumerics: passed to `field`
+* Any other string literal: passed to `paste`
 * Null: same as empty array (produces 0 values)
 
 There are two special input fields added to every source document:

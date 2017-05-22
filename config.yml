@@ -12,11 +12,8 @@ templates:
     collection: parentCollection.name
     id:
       paste:
-      - string: "fda:"
-      - handle:
-          paste:
-          - string: "http://hdl.handle.net/"
-          - handle
+      - "fda:"
+      - handle: "http://hdl.handle.net/$handle"
     creator: dc.contributor.author
     title: dc.title
     date: dc.date.issued
@@ -52,13 +49,13 @@ templates:
       paste:
         - sm_collection_label
         - paste:
-          - string: " "
+          - " "
           - sm_field_volume
           default: ""
-        - string: ", ("
+        - ", ("
         - field: ss_publication_date_text
           default: ""
-        - string: ")"
+        - ")"
     identifier: ss_handle
     language: sm_language_code
     publisher: sm_publisher
@@ -69,11 +66,7 @@ templates:
       string: "Journal"
   dlib:
     collection: _name
-    id:
-      paste:
-      - _key
-      - ":"
-      - identifier
+    id: "$_key:$identifier"
     identifier: identifier
     title: entity_title
     available: handle
@@ -124,11 +117,7 @@ collections:
     name: "NYU Press Open Access Books"
     fields:
       collection: _name
-      id:
-        paste:
-        - _key
-        - ":"
-        - id
+      id: "$_key:$id"
       identifier: id
       isbn: id
       title: title
@@ -161,7 +150,7 @@ collections:
       title:
         paste:
           - entity_title
-          - string: ' '
+          - ' '
           - field: description
             default: ''
       type:
@@ -179,18 +168,13 @@ collections:
         - ":"
         - handle: dc_identifier_s
       identifier: dc_identifier_s
-      available:
-        paste:
-          - string: "https://geo.nyu.edu/catalog/"
-          - layer_slug_s
+      available: "https://geo.nyu.edu/catalog/$layer_slug_s"
       title: dc_title_s
       description: dc_description_s
       publisher: dc_publisher_s
-      type:
-        string: "Geospatial Data"
+      type: "Geospatial Data"
       language: dc_language_s
-      format:
-        string: "Geospatial Data"
+      format: "Geospatial Data"
       creator: dc_creator_sm
       subject: dc_subject_sm
       date: dct_issued_s
@@ -207,17 +191,12 @@ collections:
       format_sim: 'Archival Object'
     fields:
       collection: collection_ssm
-      id:
-        paste:
-        - _key
-        - ":"
-        - _key
-        - _ref_ssi
+      id: "$_key:$_key$_ref_ssi"
       identifier: _ref_ssi
       date: unitdate_ssm
       available:
         paste:
-          - string: "http://dlib.nyu.edu/findingaids/html/"
+          - "http://dlib.nyu.edu/findingaids/html/"
           - repository_ssi
           - "/"
           - ead_ssi
@@ -230,10 +209,10 @@ collections:
       type: format_ssm
       location: location_ssm
       repo:
-        lookup:
-          fales:    "The Fales Library & Special Collections"
-          tamwag:   "Tamiment Library & Wagner Labor Archives"
-          archives: "New York University Archives"
+        match:
+          ^fales$:    "The Fales Library & Special Collections"
+          ^tamwag$:   "Tamiment Library & Wagner Labor Archives"
+          ^archives$: "New York University Archives"
         field: repository_ssi
       data_provider:
         string: 'NYU'
