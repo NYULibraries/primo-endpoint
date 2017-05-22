@@ -1,6 +1,7 @@
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RankNTypes #-}
+{-# LANGUAGE TupleSections #-}
 {-# LANGUAGE TypeSynonymInstances #-}
 {-# LANGUAGE ViewPatterns #-}
 module Fields
@@ -16,16 +17,17 @@ module Fields
 import           Control.Arrow (first)
 import           Control.Monad (void)
 import           Control.Monad.Trans.Class (lift)
-import           Control.Monad.Trans.Writer.Lazy (WriterT(..), Writer, writer, runWriter, tell, mapWriter)
+import           Control.Monad.Trans.Writer.Lazy (WriterT(..), Writer, writer, runWriter, tell, mapWriter, censor)
 import qualified Data.Aeson.Types as JSON
 import           Data.Char (isAlphaNum)
 import           Data.Functor.Identity (Identity)
 import qualified Data.HashMap.Strict as HMap
 import qualified Data.HashSet as HSet
-import           Data.Maybe (fromMaybe)
+import           Data.Maybe (fromMaybe, isJust, maybeToList)
 import           Data.Monoid ((<>))
 import           Data.String (IsString(..))
 import qualified Data.Text as T
+import qualified Data.Text.ICU as TU
 import           Data.Time.Format (parseTimeM, defaultTimeLocale)
 import qualified Data.Vector as V
 
@@ -35,20 +37,16 @@ import           Document
 
 -- |A 'Value' generator for a single metadata field
 data Generator
-  = GeneratorString T.Text -- ^fixed text value
-  | GeneratorField T.Text -- ^copy input field
+  = GeneratorString !T.Text -- ^fixed text value
+  | GeneratorField !T.Text -- ^copy input field
   | GeneratorMap
-    { _generatorMap :: Value -> Value -- ^apply this function to the resulting value
+    { _generatorMap :: !(Value -> Generator) -- ^apply this function to the resulting value
     , _generator :: Generator
     }
-  | GeneratorList [Generator] -- ^concatenate (`mconcat`) all the values
-  | GeneratorPaste [Generator] -- ^join (`T.concat`) all the values, producing the cross-product
-  | GeneratorOr
-    { _generator :: Generator
-    , _generatorOr :: Generator -- ^use if generator produces the empty value
-    }
+  | GeneratorList [Generator] -- ^concatenate ('mconcat') all the values
+  | GeneratorPaste [Generator] -- ^join ('T.concat') all the values, producing the cross-product
   | GeneratorWith
-    { _generatorWith :: HMap.HashMap T.Text Generator -- ^assign local variables to replace input
+    { _generatorWith :: !(HMap.HashMap T.Text Generator) -- ^assign local variables to replace input
     , _generator :: Generator
     }
 
@@ -59,9 +57,15 @@ instance IsString Generator where
 -- |Merge generators using 'GeneratorList'
 instance Monoid Generator where
   mempty = GeneratorList []
-  mappend (GeneratorList a) (GeneratorList b) = GeneratorList (a <> b)
-  mappend a@(GeneratorList _) b = a <> GeneratorList [b]
-  mappend a b = GeneratorList [a] <> GeneratorList [b]
+  mappend (GeneratorList []) g = g
+  mappend g (GeneratorList []) = g
+  mappend (GeneratorList a) (GeneratorList b) = GeneratorList (a ++ b)
+  mappend (GeneratorList a) b = GeneratorList (a ++ [b])
+  mappend a (GeneratorList b) = GeneratorList (a : b)
+  mappend a b = GeneratorList [a, b]
+
+valuesGenerator :: [T.Text] -> Generator
+valuesGenerator = foldMap GeneratorString
 
 -- |Encapusulate a generator value with the set of input fields
 type FieldsT = WriterT (HSet.HashSet T.Text)
@@ -92,9 +96,8 @@ generatorFields = snd . runWriter
 generate :: Metadata -> Generator -> Value
 generate _ (GeneratorString x) = value x
 generate m (GeneratorField f) = HMap.lookupDefault mempty f m
-generate m (GeneratorMap f g) = f $ generate m g
+generate m (GeneratorMap f g) = generate m $ f $ generate m g
 generate m (GeneratorList l) = foldMap (generate m) l
-generate m (GeneratorOr g d) = generate m g `valueOr` generate m d
 generate _ (GeneratorPaste []) = value T.empty
 generate m (GeneratorPaste [x]) = generate m x
 generate m (GeneratorPaste (g:l)) = Value
@@ -152,7 +155,7 @@ parseGeneratorMacro :: Macros -> Fields Generator -> JSON.Object -> Parser Gener
 parseGeneratorMacro g (runWriter -> (m, ma)) o
   | not (HSet.null moa) = fail $ "missing arguments: " ++ show (HSet.toList moa)
   | not (HSet.null oma) = fail $ "extra arguments: " ++ show (HSet.toList oma)
-  | otherwise = (`GeneratorWith` m) <$> HMap.traverseWithKey (\k -> parseInField k . parseGenerator g) o
+  | otherwise = flip GeneratorWith m <$> HMap.traverseWithKey (\k -> parseInField k . parseGenerator g) o
   where
   oa = HSet.fromMap $ void $ o
   moa = ma `HSet.difference` oa
@@ -168,29 +171,57 @@ parseGeneratorKey _ "paste" (JSON.String s) = parseSubst s
 parseGeneratorKey g "paste" v = liftWith JSON.withArray "paste components"
   (fmap GeneratorPaste . mapM (parseGenerator g) . V.toList) v
 parseGeneratorKey g "handle" v =
-  GeneratorMap (Value . foldMap handleToID . values) <$> parseGenerator g v
+  GeneratorMap (valuesGenerator . foldMap handleToID . values) <$> parseGenerator g v
 parseGeneratorKey g "value" v = parseGenerator g v
 parseGeneratorKey g k JSON.Null | Just m <- HMap.lookup k g = reWriter m -- macro with no arguments
 parseGeneratorKey g k v | Just m <- HMap.lookup k g = liftWith JSON.withObject "generator arguments" -- macro with arguments
   (parseInField k . parseGeneratorMacro (HMap.delete k g) m) v
 parseGeneratorKey _ k _ = fail $ "Unknown field generator: " ++ show k
 
+parseRegex :: Monad m => T.Text -> m TU.Regex
+parseRegex = either (fail . show) return . TU.regex' [TU.ErrorOnUnknownEscapes]
+
+parseMatch :: Macros -> JSON.Value -> Parser (Value -> Generator)
+parseMatch _ (JSON.String s) = do
+  r <- parseRegex s
+  return $ valuesGenerator . filter (isJust . TU.find r) . values
+parseMatch g (JSON.Object o) = do
+  c <- mapM parse $ HMap.toList o
+  return $ foldMap (matches c) . values
+  where
+  parse (k, v) = do
+    r <- parseRegex k
+    let l = groups r
+    s <- censor (`HSet.difference` HSet.fromMap (void l)) $ parseGenerator g v
+    return (r, l, s)
+  matches c v = foldMap (`match` v) c
+  match (r,l,s) = foldMap (\m -> GeneratorWith (valuesGenerator . maybeToList . ($ m) <$> l) s) . TU.find r
+  groups m = HMap.fromList
+    $ ("&", TU.group 0)
+    : ("`", TU.prefix 0)
+    : ("'", TU.suffix 0)
+    : map (\n -> (T.pack $ show n, TU.group n)) [0..TU.groupCount m]
+parseMatch _ v = lift $ JSON.typeMismatch "match string or cases" v
+
 -- |Parse a JSON object as a generator
 -- Some fields are handled specially (handlers), while the rest are passed to 'parseGeneratorKey' and merged.
 parseGeneratorObject :: Macros -> JSON.Object -> Parser Generator
-parseGeneratorObject g = run handlers where
+parseGeneratorObject g = run
+  [ ("join", withj $ \j v@(Value l) -> if null l then v else value (T.intercalate j l))
+  , ("default", withp (parseGenerator g) $ \d (Value l) -> if null l then d else valuesGenerator l)
+  , ("limit", withj $ \n -> Value . take n . values)
+  , ("match", parseMatch g)
+  , ("date", withj $ \fmt -> foldMap (fromMaybe mempty . parseTimeM True defaultTimeLocale fmt . T.unpack) . values)
+  ]
+  where
   run [] o = foldMapM (\(k,v) -> parseInField k $ parseGeneratorKey g k v) (HMap.toList o)
   run ((f, h) : r) o
-    | Just x <- HMap.lookup f o = parseInField f . h x =<< run r (HMap.delete f o)
+    | Just x <- HMap.lookup f o = GeneratorMap <$> parseInField f (h x) <*> run r (HMap.delete f o)
     | otherwise = run r o
-  handlers =
-    [ ("join", gmap $ \j (Value l) -> if null l then Value l else value $ T.intercalate j l)
-    , ("default", \j x -> GeneratorOr x <$> parseGenerator g j)
-    , ("limit", gmap $ \n -> Value . take n . values)
-    , ("lookup", gmap $ \c -> foldMap (getMetadata c) . values)
-    , ("date", gmap $ \fmt -> foldMap (fromMaybe mempty . parseTimeM True defaultTimeLocale fmt . T.unpack) . values)
-    ]
-  gmap h j x = flip GeneratorMap x . h <$> lift (JSON.parseJSON j)
+  withp :: (JSON.Value -> Parser a) -> (a -> Value -> Generator) -> JSON.Value -> Parser (Value -> Generator)
+  withp p h x = h <$> p x
+  withj :: JSON.FromJSON a => (a -> Value -> Value) -> JSON.Value -> Parser (Value -> Generator)
+  withj = withp (lift . JSON.parseJSON) . (((valuesGenerator . values) .) .)
 
 -- |Parse a generator, given the macros in scope
 parseGenerator :: Macros -> JSON.Value -> Parser Generator
@@ -211,7 +242,7 @@ parseGenerators g = withObjectOrNull "field generators" $ unTWriter . HMap.trave
 
 -- |Translate language codes according to ISO639, if possible
 languageGenerator :: ISO639 -> Generator -> Generator
-languageGenerator iso = GeneratorMap $ mapValues (\l -> fromMaybe l $ lookupISO639 iso l)
+languageGenerator iso = GeneratorMap $ valuesGenerator . map (\l -> fromMaybe l $ lookupISO639 iso l) . values
 
 -- |Adjust a single field generator
 mapGenerator :: T.Text -> (Generator -> Generator) -> FieldGenerators -> FieldGenerators

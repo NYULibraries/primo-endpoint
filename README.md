@@ -83,7 +83,14 @@ Field definitions are made up of the following:
         * generator name: key-definition arguments as object. Substitutes a generator "macro" from the generator section, assigning the given keys to their corresponding values as input fields to the macro.  The generator can also see any other input fields as well.
     * Post-processors that first process the rest of the definition, and then apply a transformation on the result:
         * `date`: string [strptime format](http://hackage.haskell.org/package/time/docs/Data-Time-Format.html).  Tries to parse each value in the result with the given format and produces a timestamp in standard format (relevant prefix of "%Y-%m-%dT%H:%M:%S%QZ") as output. Any inputs that cannot be parsed are discarded.
-        * `lookup`: key-definition lookup table as object. Applies the lookup table translation to each input, substituting the right-side definition for any matching left-side key. If no key matches, the input is discarded.
+        * `match`: match input against regular expressions
+	    * A string regular expression, which filters input values against the regular expression, passing only those which match
+	    * An object "lookup table" mapping regular expressions to substitutions: each input value is matched against each regular expression, and the right-hand value substituted for each matching value. Within the substitution, the following additional field values are available:
+	        * `\`` (backtick): the input string before the (first) match
+	        * `\'` (apostrophe): the input string after the (first) match
+	        * `&`: the matching segment of the input string
+	        * `0`: same as `&`
+		* `1`...`N`: the string matched by each parenthesized group in the regular expression
         * `limit`: integer. Take only the first *n* values from the input, discarding the rest.
         * `default`: definition. If there are no produced input values, provide the definition instead.
         * `join`: string literal delimiter. Paste all the inputs together, separated by the given delimiter.  Always produces exactly one output.

@@ -209,10 +209,10 @@ collections:
       type: format_ssm
       location: location_ssm
       repo:
-        lookup:
-          fales:    "The Fales Library & Special Collections"
-          tamwag:   "Tamiment Library & Wagner Labor Archives"
-          archives: "New York University Archives"
+        match:
+          ^fales$:    "The Fales Library & Special Collections"
+          ^tamwag$:   "Tamiment Library & Wagner Labor Archives"
+          ^archives$: "New York University Archives"
         field: repository_ssi
       data_provider:
         string: 'NYU'
