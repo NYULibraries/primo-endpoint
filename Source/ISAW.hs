@@ -10,7 +10,7 @@ import qualified Data.ByteString as BS
 import qualified Data.ByteString.Char8 as BSC
 import qualified Data.Conduit as C
 import qualified Data.Conduit.Combinators as CC
-import           Data.Conduit.Attoparsec (sinkParser)
+import           Data.Conduit.Attoparsec (sinkParserEither)
 import qualified Data.HashMap.Strict as HMap
 import qualified Network.HTTP.Simple as HTTP
 import qualified Codec.Archive.Zip.Conduit.UnZip as Z
@@ -34,12 +34,12 @@ whileRight = C.await >>= maybe
 streamISAW :: C.Conduit (Either Z.ZipEntry BS.ByteString) IO Document
 streamISAW = mapM_ (\e -> entry e >> streamISAW) =<< C.await where
   entry (Left Z.ZipEntry{ Z.zipEntryName = n })
-    | ".json" `BS.isSuffixOf` n =
+    | ".json" `BS.isSuffixOf` n && BSC.head n `notElem` ['.','_'] =
       mapM_ C.yield
-        =<< either (fail . ((BSC.unpack n ++ ": ") ++)) return . JSON.parseEither parseISAW
-        =<< whileRight C..| sinkParser JSON.json'
+        =<< either (fail . ((BSC.unpack n ++ ": ") ++)) return . either (Left . show) (JSON.parseEither parseISAW)
+        =<< whileRight C..| sinkParserEither JSON.json'
     | otherwise = return ()
-  entry (Right _) = fail "Unexpected file data"
+  entry (Right _) = return ()
 
 loadISAW :: IO Documents
 loadISAW = HTTP.httpSink isawRequest $ \_ ->
