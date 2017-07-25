@@ -110,6 +110,11 @@ collections:
     core: viewer
     code: theliberator
     template: viewer
+  fawf:
+    source: DLTS
+    core: viewer
+    code: fawf 
+    template: viewer
   nyupress:
     source: DLTS
     core: nyupress
