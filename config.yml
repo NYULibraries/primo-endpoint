@@ -86,6 +86,10 @@ collections:
     source: FDA
     hdl: 34767
     template: traditional
+  archaeology:
+    source: FDA
+    hdl: 38228
+    template: traditional
   ngo:
     source: FDA
     hdl: 33605
