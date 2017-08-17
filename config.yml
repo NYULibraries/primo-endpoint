@@ -109,6 +109,11 @@ collections:
     core: viewer
     code: fdm
     template: viewer
+  swkr:
+    source: DLTS
+    core: viewer
+    code: swkr 
+    template: viewer
   theliberator:
     source: DLTS
     core: viewer
