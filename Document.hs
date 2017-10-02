@@ -62,6 +62,7 @@ instance JSON.FromJSON Value where
   parseJSON (JSON.Bool True) = return $ value "true"
   parseJSON (JSON.Bool False) = return $ value "false"
   parseJSON (JSON.Array a) = Value . concatMap values <$> mapM JSON.parseJSON a
+  parseJSON (JSON.Null) = return $ value T.empty
   parseJSON v = JSON.typeMismatch "Value" v
 
 -- |A more permissive (total) parser for Values that produces empty for unparsable values (i.e., objects)

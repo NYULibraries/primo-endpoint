@@ -17,8 +17,10 @@ import qualified Data.Text.Encoding as TE
 import qualified Data.Yaml as YAML
 import qualified Network.HTTP.Client as HTTP
 import           Network.HTTP.Types.Header (RequestHeaders)
+import           Data.List (nubBy)
+import           Data.Function (on)
 import           System.Directory (doesFileExist)
-
+import           Debug.Trace
 import           Util
 
 data Auth = Auth
@@ -56,6 +58,6 @@ applyAuth auths hm = hm
     req' <- HTTP.managerModifyRequest hm req
     return $ maybe req' (\Auth{..} -> 
       fromMaybe id (HTTP.applyBasicAuth <$> authUser <*> authPass)
-        req'{ HTTP.requestHeaders = authHeaders ++ HTTP.requestHeaders req' })
+        req'{ HTTP.requestHeaders = traceShowId $ nubBy ( (==) `on` fst) $ authHeaders ++ HTTP.requestHeaders req' })
       $ HMap.lookup (HTTP.host req') auths
   }
