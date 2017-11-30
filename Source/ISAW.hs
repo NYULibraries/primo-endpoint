@@ -18,7 +18,8 @@ import qualified Codec.Archive.Zip.Conduit.UnZip as Z
 import           Document
 
 isawRequest :: HTTP.Request
-isawRequest = HTTP.parseRequest_ "http://isaw.nyu.edu/publications/awol-index/awol-index-json.zip"
+--isawRequest = HTTP.parseRequest_ "http://isaw.nyu.edu/publications/awol-index/awol-index-json.zip"
+isawRequest = HTTP.parseRequest_ "https://archive.nyu.edu/bitstream/2451/38643/2/json-for-ichabod.zip"
 
 parseISAW :: JSON.Value -> JSON.Parser (Maybe Document)
 parseISAW = JSON.withObject "isaw json" $ \o -> return $
