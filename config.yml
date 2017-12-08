@@ -253,6 +253,9 @@ collections:
       identifier: 
           - identifiers.issn.generic
           - identifiers.issn.electronic
+      ISSN: 
+          - identifiers.issn.generic
+          - identifiers.issn.electronic
       author: authors
       contributor:
           - contributors
