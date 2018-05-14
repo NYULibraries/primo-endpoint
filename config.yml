@@ -239,6 +239,37 @@ collections:
           - collection_ssm
           - parent_unittitles_ssm
         join: ": "
+  mss_496:
+    source: SpecialCollections
+    filters:
+      collection_sim: 'New York University Collection of Contemporary Composers'' Websites'
+      format_sim: 'Archival Object'
+    fields:
+      collection: collection_ssm
+      id: "$_key:$_key$_ref_ssi"
+      identifier: _ref_ssi
+      date: unitdate_ssm
+      available:
+        paste:
+          - "http://dlib.nyu.edu/findingaids/html/fales/mss_496/dsc"
+          - ref_ssi
+          - string: ".html"
+      title: unittitle_ssm
+      type: format_ssm
+      location: location_ssm
+      repo:
+        match:
+          ^fales$:    "The Fales Library & Special Collections"
+          ^tamwag$:   "Tamiment Library & Wagner Labor Archives"
+          ^archives$: "New York University Archives"
+        field: repository_ssi
+      data_provider:
+        string: 'NYU'
+      relation:
+        value:
+          - collection_ssm
+          - parent_unittitles_ssm
+        join: ": "
   awol:
     source: ISAW
     name: "AWOL"
