@@ -123,6 +123,11 @@ collections:
     core: viewer
     code: theliberator
     template: viewer
+  themasses:
+    source: DLTS
+    core: viewer
+    code: themasses
+    template: viewer
   fawf:
     source: DLTS
     core: viewer
@@ -159,22 +164,6 @@ collections:
         string: "Video"
       format:
         string: "Video"
-  masses:
-    source: DLib
-    path: "themasses/books.json"
-    name: "The Masses"
-    template: dlib
-    fields:
-      title:
-        paste:
-          - entity_title
-          - ' '
-          - field: description
-            default: ''
-      type:
-        string: "Book"
-      format:
-        string: "Book"
   sdr:
     source: SDR
     name: "Spatial Data Repository"
