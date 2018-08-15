@@ -55,6 +55,10 @@ instance IsString Generator where
   fromString = GeneratorString . fromString
 
 -- |Merge generators using 'GeneratorList'
+instance Semigroup Generator where
+  (<>) = mappend
+
+-- |Merge generators using 'GeneratorList'
 instance Monoid Generator where
   mempty = GeneratorList []
   mappend (GeneratorList []) g = g
@@ -77,6 +81,9 @@ type Macros = HMap.HashMap T.Text (Fields Generator)
 
 -- |An entire metadata cross-walk, mapping a set of output fields to their 'Generator'
 type FieldGenerators = Fields (HMap.HashMap T.Text Generator)
+
+instance Semigroup FieldGenerators where
+  a <> b = writer $ runWriter a <> runWriter b
 
 instance Monoid FieldGenerators where
   mempty = writer (mempty, mempty)

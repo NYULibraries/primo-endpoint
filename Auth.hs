@@ -28,6 +28,9 @@ data Auth = Auth
   , authHeaders :: RequestHeaders
   }
 
+instance Semigroup Auth where
+  (<>) = mappend
+
 instance Monoid Auth where
   mempty = Auth Nothing Nothing []
   mappend (Auth u1 p1 h1) (Auth u2 p2 h2) =
@@ -48,7 +51,7 @@ loadAuth :: FilePath -> IO AuthSettings
 loadAuth f = do
   e <- doesFileExist f
   if e
-    then HMap.fromList . map (first tBS) . HMap.toList <$> (parseJSONM . fromMaybe JSON.emptyObject =<< YAML.decodeFile f)
+    then HMap.fromList . map (first tBS) . HMap.toList <$> (parseJSONM =<< YAML.decodeFileThrow f)
     else return HMap.empty
 
 applyAuth :: AuthSettings -> HTTP.ManagerSettings -> HTTP.ManagerSettings
