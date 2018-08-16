@@ -1,4 +1,4 @@
-FROM haskell:8.4.3
+FROM haskell:8.0.2
 LABEL application="primo-endpoint" url="http://github.com/NYULibraries/primo-endpoint"
 EXPOSE 80
 RUN apt-get update && \

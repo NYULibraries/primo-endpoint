@@ -36,7 +36,7 @@ import qualified Text.Blaze.Html5.Attributes as HA
 
 -- |Metadata values can always be multiple
 newtype Value = Value{ values :: [T.Text] }
-  deriving (Eq, Ord, Semigroup, Monoid, Show)
+  deriving (Eq, Ord, Monoid, Show)
 
 mapValues :: (T.Text -> T.Text) -> Value -> Value
 mapValues f = Value . map f . values
