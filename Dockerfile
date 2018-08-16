@@ -5,7 +5,7 @@ RUN apt-get update && \
     apt-get install -y libicu-dev && \
     apt-get autoremove --purge -y && \
     apt-get autoclean -y && \
-    rm -rf /var/cache/apt/* /var/lib/apt/lists/*
+    rm -rf  /var/lib/apt/lists/*
 
 VOLUME /cache
 WORKDIR /app
