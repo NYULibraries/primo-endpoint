@@ -13,5 +13,10 @@ COPY . /app
 RUN stack install --system-ghc && \
   rm -rf .stack-work ~/.stack
 
-ENTRYPOINT ["/root/.local/bin/primo-endpoint", "-C", "/cache", "-w8080"]
+RUN  touch auth.yml && \ 
+     echo "archive.nyu.edu" >>auth.yml && \
+     echo " headers:">>auth.yml && \
+     echo "  rest-dspace-token: ENV[$TOKEN_FDA]" >auth.yml
+
+ENTRYPOINT ["/root/.local/bin/primo-endpoint", "-C", "/cache", "-w8080" "-a auth.yml"]
 CMD ["-l", "-v"]
