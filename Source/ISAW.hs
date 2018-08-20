@@ -27,12 +27,12 @@ parseISAW = JSON.withObject "isaw json" $ \o -> return $
     JSON.Null -> Just $ parseNestedMetadata "." "" $ JSON.Object $ HMap.delete "provenance" o
     _ -> Nothing
 
-whileRight :: Monad m => C.ConduitT (Either a b) b m ()
+whileRight :: Monad m => C.Conduit (Either a b) m b
 whileRight = C.await >>= maybe
   (return ())
   (either (C.leftover . Left) (\b -> C.yield b >> whileRight))
 
-streamISAW :: C.ConduitT (Either Z.ZipEntry BS.ByteString) Document IO ()
+streamISAW :: C.Conduit (Either Z.ZipEntry BS.ByteString) IO Document
 streamISAW = mapM_ (\e -> entry e >> streamISAW) =<< C.await where
   entry (Left Z.ZipEntry{ Z.zipEntryName = n })
     | ".json" `BS.isSuffixOf` n && BSC.head n `notElem` ['.','_'] =

@@ -14,6 +14,7 @@ import           Control.Monad (guard, when)
 import qualified Data.Aeson.Types as JSON
 import qualified Data.ByteString as BS
 import qualified Data.HashMap.Strict as HMap
+import           Data.Maybe (fromMaybe)
 import           Data.Monoid ((<>))
 import qualified Data.Text as T
 import qualified Data.Text.Encoding as TE (encodeUtf8)
@@ -168,7 +169,7 @@ updateIndices force pc f = do
 -- @loadConfig force cacheDir confFile@
 loadConfig :: Bool -> FilePath -> FilePath -> Bool -> IO Config
 loadConfig force cdir conf verb = do
-  jc <- YAML.decodeFileThrow conf
+  jc <- fromMaybe JSON.Null <$> YAML.decodeFile conf
   pc <- parseJSONM jc
   idx <- updateIndices force pc (cdir </> "index.json")
   iso <- loadISO639 (cdir </> "iso639")
