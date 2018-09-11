@@ -94,6 +94,8 @@ collections:
     source: FDA
     hdl: 33611
     template: traditional
+    fields:
+     relation: dc.relation.ispartofseries
   ngo:
     source: FDA
     hdl: 33605
@@ -113,26 +115,41 @@ collections:
     core: viewer
     code: fdm
     template: viewer
+    fields:
+      description:
+        string: "Freedom (1951-55) was a newspaper founded in Harlem, New York by activists Paul Robeson and Louis Burnham during the Cold War and McCarthy eras. It openly challenged racism, imperialism, colonialism, and political repression and advocated for civil rights, labor rights and world peace. Its writers and contributors included W.E.B. Du Bois, Alice Childress and Lorraine Hansberry"
   swkr:
     source: DLTS
     core: viewer
     code: swkr 
     template: viewer
+    fields:
+      description:
+        string: "Southern Worker was a regional publication of the Communist Party, USA. It was published from 1930-1937"
   theliberator:
     source: DLTS
     core: viewer
     code: theliberator
     template: viewer
+    fields:
+      description:
+        string: "Started in 1918 by Max Eastman and his sister Crystal Eastman to continue the work of The Masses and provide a platform for publishing John Reed's reporting on the Bolshevik Revolution, The Liberator continued the political and labor writing of its predecessor, as well as its emphasis on art, poetry, and fiction.r"
   themasses:
     source: DLTS
     core: viewer
     code: themasses
     template: viewer
+    fields:
+      description:
+        string: "The Masses, a richly illustrated radical magazine, was published monthly in New York from 1911 until 1917, when it was suppressed by the government for its anti-war and anti-government perspective. The Masses blended art and politics and included fiction, nonfiction, poetry, and illustrations by many of the leading radical figures of the day"
   fawf:
     source: DLTS
     core: viewer
     code: fawf 
     template: viewer
+    fields:
+      description:
+        string: "The Fight Against War and Fascism (1933-1939) was published by the American League Against War and Fascism. It was an initiative of the Communist Party, USA, but its membership was very broad and included members of other left-wing groups, trade unions, and African American civic organizations." 
   nyupress:
     source: DLTS
     core: nyupress
