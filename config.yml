@@ -118,6 +118,14 @@ collections:
     fields:
       description:
         string: "Freedom (1951-55) was a newspaper founded in Harlem, New York by activists Paul Robeson and Louis Burnham during the Cold War and McCarthy eras. It openly challenged racism, imperialism, colonialism, and political repression and advocated for civil rights, labor rights and world peace. Its writers and contributors included W.E.B. Du Bois, Alice Childress and Lorraine Hansberry"
+  palante:
+    source: DLTS
+    core: viewer
+    code: palante 
+    template: viewer
+    fields:
+      description:
+        string: "Palante (1970 - 1976) was a bilingual newspaper published by the Young Lords Party. The group was founded in July 1969 as the New York chapter of the Young Lords Organization and renamed itself in May 1970 after separating from the Chicago Young Lords. In July 1972, the Young Lords Party became the Puerto Rican Revolutionary Workers Organization. Palante focused on the Puerto Rican independence movement, the oppression of Puerto Ricans and other Latinos in the United States, and global struggles for liberation."
   swkr:
     source: DLTS
     core: viewer
@@ -150,27 +158,6 @@ collections:
     fields:
       description:
         string: "The Fight Against War and Fascism (1933-1939) was published by the American League Against War and Fascism. It was an initiative of the Communist Party, USA, but its membership was very broad and included members of other left-wing groups, trade unions, and African American civic organizations." 
-  nyupress:
-    source: DLTS
-    core: nyupress
-    code: oa-books
-    name: "NYU Press Open Access Books"
-    fields:
-      collection: _name
-      id: "$_key:$id"
-      identifier: id
-      isbn: id
-      title: title
-      creator: author
-      available: handle
-      citation: handle
-      date: date
-      description: description
-      type:
-        string: "Book"
-      language: language
-      format:
-        string: "Book"
   rosie:
     source: DLib
     path: "rosie/content.json"
