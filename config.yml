@@ -158,16 +158,6 @@ collections:
     fields:
       description:
         string: "The Fight Against War and Fascism (1933-1939) was published by the American League Against War and Fascism. It was an initiative of the Communist Party, USA, but its membership was very broad and included members of other left-wing groups, trade unions, and African American civic organizations." 
-  rosie:
-    source: DLib
-    path: "rosie/content.json"
-    name: "The Real Rosie the Riveter Project"
-    template: dlib
-    fields:
-      type:
-        string: "Video"
-      format:
-        string: "Video"
   sdr:
     source: SDR
     name: "Spatial Data Repository"
