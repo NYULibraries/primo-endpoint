@@ -188,7 +188,6 @@ collections:
     source: SpecialCollections
     filters:
       collection_sim: 'David Wojnarowicz Papers'
-      dao_sim: 'Online Access'
       format_sim: 'Archival Object'
     fields:
       collection: collection_ssm
@@ -201,11 +200,11 @@ collections:
           - repository_ssi
           - "/"
           - ead_ssi
-          - "/dsc"
-          - field: _parent_ssm
+           - "/dsc"
+          - field: parent_ssm
             limit: 1
           - ".html#"
-          - _ref_ssi
+          - ref_ssi
       title: unittitle_ssm
       type: format_ssm
       location: location_ssm
