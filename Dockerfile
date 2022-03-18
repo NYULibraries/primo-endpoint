@@ -1,20 +1,17 @@
-FROM haskell:8.0.2
+FROM haskell:latest
 LABEL application="primo-endpoint" url="http://github.com/NYULibraries/primo-endpoint"
 EXPOSE 8080
-RUN apt-get update && \
-    apt-get install -y libicu-dev && \
-    apt-get autoremove --purge -y && \
-    apt-get autoclean -y && \
-    rm -rf /var/cache/apt/* /var/lib/apt/lists/*
 
 VOLUME /cache
-RUN useradd -d /app -m app
 WORKDIR /app
-COPY --chown=app . /app
-USER app
+COPY . /app
 
 RUN stack install --system-ghc && \
-    rm -rf .stack-work ~/.stack
+    rm -rf .stack-work ~/.stack && \
+    chgrp -R 0 /app && \
+    chmod -R g=u /app
+
+USER 1001
 
 ENV PATH=$PATH:/app/.local/bin
 ENTRYPOINT ["/app/entrypoint.sh", "-C", "/cache", "-w8080"]
