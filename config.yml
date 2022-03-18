@@ -90,12 +90,6 @@ collections:
     source: FDA
     hdl: 38228
     template: traditional
-  Data Service Collection:
-    source: FDA
-    hdl: 33611
-    template: traditional
-    fields:
-     relation: dc.relation.ispartofseries
   ngo:
     source: FDA
     hdl: 33605
