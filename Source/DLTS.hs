@@ -30,10 +30,10 @@ instance JSON.FromJSON DLTSCore where
     cn _ = fail "Unknown DLTS core"
 
 solr3Base :: HTTP.Request
-solr3Base = HTTP.parseRequest_ "http://discovery.dlib.nyu.edu:8080/solr3_discovery"
+solr3Base = HTTP.parseRequest_ "http://discovery2.dlib.nyu.edu:8080/solr3_discovery"
 
 solr6Base :: HTTP.Request
-solr6Base = HTTP.parseRequest_ "http://discovery1.dlib.nyu.edu:8983/solr"
+solr6Base = HTTP.parseRequest_ "http://stagediscovery.dlib.nyu.edu:8983/solr"
 
 
 data DLTSCoreMeta = DLTSCoreMeta
@@ -43,7 +43,7 @@ data DLTSCoreMeta = DLTSCoreMeta
 
 dltsCoreMeta :: DLTSCore -> DLTSCoreMeta
 dltsCoreMeta DLTSCore   = DLTSCoreMeta (addRequestPath solr3Base "select") "collection_code"
-dltsCoreMeta DLTSViewer = DLTSCoreMeta (addRequestPath solr6Base "viewer/select") "sm_collection_code"
+dltsCoreMeta DLTSViewer = DLTSCoreMeta (addRequestPath solr6Base "viewer_prod/select") "sm_collection_code"
 dltsCoreMeta NYUPress   = DLTSCoreMeta (addRequestPath solr3Base "nyupress/select") "collection_code"
 
 loadDLTS :: DLTSCore -> T.Text -> HSet.HashSet T.Text -> IO Documents
