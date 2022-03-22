@@ -2,7 +2,6 @@ FROM haskell:latest
 LABEL application="primo-endpoint" url="http://github.com/NYULibraries/primo-endpoint"
 EXPOSE 8080
 
-VOLUME /cache
 WORKDIR /app
 COPY . /app
 
