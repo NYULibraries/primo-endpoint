@@ -13,5 +13,5 @@ RUN stack install --system-ghc && \
 USER 1001
 
 ENV PATH=$PATH:/app/.local/bin
-ENTRYPOINT ["/app/entrypoint.sh", "-C", "/cache", "-w8080"]
+ENTRYPOINT ["/app/entrypoint.sh", "-w8080"]
 CMD ["-l", "-v"]
