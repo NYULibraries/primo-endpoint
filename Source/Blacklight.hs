@@ -5,6 +5,7 @@ module Source.Blacklight
   ) where
 
 import           Control.Arrow ((***))
+import           Control.Concurrent (threadDelay)
 import qualified Data.Aeson.Types as JSON
 import qualified Data.ByteString.Char8 as BSC
 import           Data.Monoid ((<>))
@@ -38,4 +39,5 @@ loadBlacklight :: HTTP.Request -> [(BSC.ByteString, BSC.ByteString)] -> BSC.Byte
 loadBlacklight req fq key = V.concat <$> loop 1 where
   loop page = do
     (d, l) <- loadBlacklightPage req fq key page
+    threadDelay 10000000
     (d :) <$> if l then return [] else loop (succ page)

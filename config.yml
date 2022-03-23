@@ -152,16 +152,6 @@ collections:
     fields:
       description:
         string: "The Fight Against War and Fascism (1933-1939) was published by the American League Against War and Fascism. It was an initiative of the Communist Party, USA, but its membership was very broad and included members of other left-wing groups, trade unions, and African American civic organizations." 
-  rosie:
-    source: DLib
-    path: "rosie/content.json"
-    name: "The Real Rosie the Riveter Project"
-    template: dlib
-    fields:
-      type:
-        string: "Video"
-      format:
-        string: "Video"
   sdr:
     source: SDR
     name: "Spatial Data Repository"
@@ -192,8 +182,8 @@ collections:
     source: SpecialCollections
     filters:
       collection_sim: 'David Wojnarowicz Papers'
-      dao_sim: 'Online Access'
       format_sim: 'Archival Object'
+      parent_ssi: 'aspace_ref11'
     fields:
       collection: collection_ssm
       id: "$_key:$_key$_ref_ssi"
@@ -206,10 +196,48 @@ collections:
           - "/"
           - ead_ssi
           - "/dsc"
-          - field: _parent_ssm
+          - field: parent_ssm
             limit: 1
           - ".html#"
-          - _ref_ssi
+          - ref_ssi
+      title: unittitle_ssm
+      type: format_ssm
+      location: location_ssm
+      repo:
+        match:
+          ^fales$:    "The Fales Library & Special Collections"
+          ^tamwag$:   "Tamiment Library & Wagner Labor Archives"
+          ^archives$: "New York University Archives"
+        field: repository_ssi
+      data_provider:
+        string: 'NYU'
+      relation:
+        value:
+          - collection_ssm
+          - parent_unittitles_ssm
+        join: ": "
+  magickbox:
+    source: SpecialCollections
+    filters:
+      collection_sim: 'David Wojnarowicz Papers'
+      format_sim: 'Archival Object'
+      parent_ssi: 'aspace_ref3901'
+    fields:
+      collection: collection_ssm
+      id: "$_key:$_key$_ref_ssi"
+      identifier: _ref_ssi
+      date: unitdate_ssm
+      available:
+        paste:
+          - "http://dlib.nyu.edu/findingaids/html/"
+          - repository_ssi
+          - "/"
+          - ead_ssi
+          - "/dsc"
+          - field: parent_ssm
+            limit: 1
+          - ".html#"
+          - ref_ssi
       title: unittitle_ssm
       type: format_ssm
       location: location_ssm
